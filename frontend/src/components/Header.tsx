@@ -20,33 +20,33 @@ export default function Header({ activeTab, user, onLogout }: HeaderProps) {
   const currentTab = TAB_LABELS[activeTab] || { title: 'Giao diện Xưởng In', subtitle: 'VietCraft Portal' };
 
   return (
-    <header className="h-[68px] bg-[#0a0720]/90 backdrop-blur-lg border-b border-[#180f3a] px-6 flex items-center justify-between flex-shrink-0 sticky top-0 z-40">
+    <header className="h-[68px] bg-white/80 backdrop-blur-lg border-b border-slate-200/80 px-6 flex items-center justify-between flex-shrink-0 sticky top-0 z-40 shadow-xs">
       {/* Left: page distinction title */}
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center flex-shrink-0 shadow-md">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center flex-shrink-0 shadow-sm">
           <Printer className="w-4 h-4 text-white" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-white leading-none">{currentTab.title}</h2>
-          <p className="text-[11px] text-violet-400 mt-1 leading-none font-medium">{currentTab.subtitle}</p>
+          <h2 className="text-sm font-bold text-slate-900 leading-none">{currentTab.title}</h2>
+          <p className="text-[11px] text-violet-600 mt-1 leading-none font-semibold">{currentTab.subtitle}</p>
         </div>
       </div>
 
       {/* Right: status + profile */}
       <div className="flex items-center gap-3">
         {/* DB status chip */}
-        <div className="hidden md:flex items-center gap-1.5 bg-[#0f0b2a] border border-[#1f1650] rounded-lg px-3 py-1.5 text-[11px] text-slate-400">
+        <div className="hidden md:flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-[11px] text-slate-600">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <Database className="w-3 h-3 text-violet-400" />
-          <span>Database <strong className="text-violet-300">Atlas Live</strong></span>
+          <Database className="w-3 h-3 text-violet-600" />
+          <span>Database <strong className="text-violet-700">Atlas Live</strong></span>
         </div>
 
         {/* Profile card */}
         {user && (
           <div className={`flex items-center gap-2.5 border rounded-xl pl-2 pr-1 py-1 transition-all ${
             isAdmin
-              ? 'bg-violet-950/20 border-violet-800/40'
-              : 'bg-fuchsia-950/20 border-fuchsia-800/40'
+              ? 'bg-violet-50 border-violet-200'
+              : 'bg-fuchsia-50 border-fuchsia-200'
           }`}>
             {/* Role badge */}
             <span className={isAdmin ? 'badge-admin' : 'badge-operator'}>
@@ -57,14 +57,14 @@ export default function Header({ activeTab, user, onLogout }: HeaderProps) {
             </span>
 
             {/* Name */}
-            <span className="text-xs font-semibold text-slate-200 max-w-[110px] truncate">{user.name}</span>
+            <span className="text-xs font-bold text-slate-800 max-w-[110px] truncate">{user.name}</span>
 
             {/* Avatar */}
             {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-lg object-cover border border-white/10 flex-shrink-0" />
+              <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-lg object-cover border border-slate-200 flex-shrink-0" />
             ) : (
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-white text-[11px] flex-shrink-0 ${
-                isAdmin ? 'bg-violet-700' : 'bg-fuchsia-700'
+                isAdmin ? 'bg-violet-600' : 'bg-fuchsia-600'
               }`}>
                 {user.name?.[0]?.toUpperCase()}
               </div>
@@ -74,7 +74,7 @@ export default function Header({ activeTab, user, onLogout }: HeaderProps) {
             <button
               onClick={onLogout}
               title="Đăng xuất khỏi hệ thống"
-              className="p-1.5 hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 rounded-lg transition-all"
+              className="p-1.5 hover:bg-rose-100 text-slate-400 hover:text-rose-600 rounded-lg transition-all"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>

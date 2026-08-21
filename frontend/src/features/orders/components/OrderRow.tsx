@@ -18,27 +18,27 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
   const item = order.items[0];
 
   return (
-    <tr className="hover:bg-[#1a1444]/40 transition-colors">
+    <tr className="hover:bg-slate-50 transition-colors">
       <td className="px-6 py-4">
-        <span className="font-extrabold text-white block">{order.order_code}</span>
+        <span className="font-extrabold text-slate-900 block">{order.order_code}</span>
         <span className="text-[11px] text-slate-500 font-medium mt-0.5 block">
           {new Date(order.createdAt).toLocaleString('vi-VN')}
         </span>
       </td>
       <td className="px-6 py-4">
-        <span className="font-semibold block text-slate-200">{order.shipping_address?.recipient_name || order.buyer_name}</span>
-        <span className="text-xs text-slate-400 block mt-1 flex items-center gap-1">
-          <Phone className="w-3 h-3 text-violet-400 flex-shrink-0" />
+        <span className="font-bold block text-slate-800">{order.shipping_address?.recipient_name || order.buyer_name}</span>
+        <span className="text-xs text-slate-500 block mt-1 flex items-center gap-1">
+          <Phone className="w-3 h-3 text-violet-600 flex-shrink-0" />
           {order.shipping_address?.phone || order.recipient_phone}
         </span>
-        <span className="text-xs text-slate-400 block mt-0.5 max-w-[200px] truncate" title={order.shipping_address?.address_detail}>
-          <MapPin className="w-3 h-3 text-violet-400 inline-block mr-1 flex-shrink-0" />
+        <span className="text-xs text-slate-500 block mt-0.5 max-w-[200px] truncate" title={order.shipping_address?.address_detail}>
+          <MapPin className="w-3 h-3 text-violet-600 inline-block mr-1 flex-shrink-0" />
           {order.shipping_address?.address_detail}
         </span>
       </td>
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-lg bg-[#0e0a29] border border-[#2e2671] overflow-hidden flex-shrink-0 relative group">
+          <div className="w-14 h-14 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 relative group shadow-xs">
             {item?.artwork_url ? (
               <>
                 <img src={item.artwork_url} alt="design" className="w-full h-full object-cover" />
@@ -46,34 +46,34 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
                   href={item.artwork_url} 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                   title="Mở file gốc"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-white" />
                 </a>
               </>
             ) : (
-              <Printer className="w-6 h-6 text-slate-600" />
+              <Printer className="w-6 h-6 text-slate-400" />
             )}
           </div>
           <div>
-            <span className="font-bold text-slate-200 block text-xs max-w-[180px] truncate">{item?.title}</span>
-            <span className="text-[11px] text-slate-500 font-mono block mt-0.5">SKU: {item?.sku}</span>
-            <span className="text-[11px] text-violet-400 block mt-0.5">
+            <span className="font-bold text-slate-800 block text-xs max-w-[180px] truncate">{item?.title}</span>
+            <span className="text-[11px] text-slate-400 font-mono block mt-0.5">SKU: {item?.sku}</span>
+            <span className="text-[11px] text-violet-600 font-bold block mt-0.5">
               Option: {[item?.color, item?.size].filter(Boolean).join(' / ')}
             </span>
           </div>
         </div>
       </td>
-      <td className="px-6 py-4 text-center font-bold text-slate-200">
+      <td className="px-6 py-4 text-center font-bold text-slate-900">
         {item?.quantity}
       </td>
       <td className="px-6 py-4 text-center">
         <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider ${
-          order.status === 'RECEIVED' ? 'bg-violet-950 text-violet-300 border border-violet-850' :
-          order.status === 'PRINTING' ? 'bg-amber-950 text-amber-300 border border-amber-850' :
-          order.status === 'PACKAGED' ? 'bg-emerald-950 text-emerald-300 border border-emerald-850' :
-          'bg-blue-950 text-blue-300 border border-blue-850'
+          order.status === 'RECEIVED' ? 'bg-violet-50 text-violet-700 border border-violet-200' :
+          order.status === 'PRINTING' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+          order.status === 'PACKAGED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+          'bg-blue-50 text-blue-700 border border-blue-200'
         }`}>
           {order.status === 'RECEIVED' && 'Đã nhận file'}
           {order.status === 'PRINTING' && 'Đang in ấn'}
@@ -82,7 +82,7 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
         </span>
 
         {order.status === 'SHIPPED' && (
-          <div className="text-[10px] text-slate-400 font-medium mt-1">
+          <div className="text-[10px] text-slate-500 font-medium mt-1">
             <strong>{order.carrier}</strong>: {order.tracking_number}
           </div>
         )}
@@ -91,7 +91,7 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
         {order.status === 'RECEIVED' && (
           <button 
             onClick={() => onUpdateStatus(order._id, order.status)}
-            className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all"
+            className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-bold transition-all shadow-xs"
           >
             Duyệt in
           </button>
@@ -99,7 +99,7 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
         {order.status === 'PRINTING' && (
           <button 
             onClick={() => onUpdateStatus(order._id, order.status)}
-            className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all"
+            className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-bold transition-all shadow-xs"
           >
             Hoàn thành in
           </button>
@@ -109,17 +109,17 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
             onClick={() => onOpenShipModal(order)}
             disabled={userRole !== 'ADMIN'}
             title={userRole !== 'ADMIN' ? 'Yêu cầu quyền Admin để giao hàng' : ''}
-            className={`text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1 ml-auto ${
+            className={`text-white text-xs px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ml-auto shadow-xs ${
               userRole === 'ADMIN' 
                 ? 'bg-emerald-600 hover:bg-emerald-700' 
-                : 'bg-stone-700 cursor-not-allowed opacity-50'
+                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
             }`}
           >
             <Truck className="w-3.5 h-3.5" /> Giao hàng
           </button>
         )}
         {order.status === 'SHIPPED' && (
-          <div className="text-emerald-400 font-semibold text-xs flex items-center justify-end gap-1">
+          <div className="text-emerald-600 font-bold text-xs flex items-center justify-end gap-1">
             <CheckCircle className="w-3.5 h-3.5" /> Đã hoàn tất
           </div>
         )}

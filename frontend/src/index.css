@@ -6,9 +6,9 @@
   font-family: 'Outfit', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: dark;
-  color: #e2e8f0;
-  background-color: #06030f;
+  color-scheme: light;
+  color: #0f172a;
+  background-color: #f8fafc;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -21,7 +21,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #06030f;
+  background-color: #f8fafc;
+  color: #0f172a;
   overflow-x: hidden;
 }
 
@@ -46,8 +47,8 @@ body {
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px 4px rgba(139, 92, 246, 0.15); }
-  50%       { box-shadow: 0 0 36px 8px rgba(139, 92, 246, 0.30); }
+  0%, 100% { box-shadow: 0 0 20px 4px rgba(124, 58, 237, 0.10); }
+  50%       { box-shadow: 0 0 36px 8px rgba(124, 58, 237, 0.20); }
 }
 
 .animate-fade-in       { animation: fadeIn      0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -57,16 +58,16 @@ body {
 
 /* ─── Glassmorphism helpers ──────────────────────────── */
 .glass {
-  background: rgba(18, 14, 51, 0.55);
+  background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(44, 34, 110, 0.45);
+  border: 1px solid rgba(226, 232, 240, 0.8);
 }
 .glass-light {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(248, 250, 252, 0.8);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(241, 245, 249, 1);
 }
 
 /* ─── Role badges ─────────────────────────────────────── */
@@ -80,9 +81,9 @@ body {
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(134, 25, 143, 0.25);
-  color: #e879f9;
-  border: 1px solid rgba(134, 25, 143, 0.45);
+  background: rgba(217, 70, 239, 0.15);
+  color: #c026d3;
+  border: 1px solid rgba(217, 70, 239, 0.3);
 }
 .badge-operator {
   display: inline-flex;
@@ -94,13 +95,13 @@ body {
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(91, 33, 182, 0.25);
-  color: #a78bfa;
-  border: 1px solid rgba(91, 33, 182, 0.45);
+  background: rgba(124, 58, 237, 0.15);
+  color: #7c3aed;
+  border: 1px solid rgba(124, 58, 237, 0.3);
 }
 
 /* ─── Scrollbar ───────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #0d0926; }
-::-webkit-scrollbar-thumb { background: #3c2a85; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #5b3fa8; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

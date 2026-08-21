@@ -131,7 +131,7 @@ export default function App() {
   const pendingJobsCount = stats.received + stats.printing + stats.packaged;
 
   return (
-    <div className="min-h-screen flex text-slate-100 bg-[#0d0926] font-sans">
+    <div className="min-h-screen flex text-slate-800 bg-slate-50 font-sans">
       {/* Sidebar */}
       <Sidebar 
         activeTab={activeTab} 

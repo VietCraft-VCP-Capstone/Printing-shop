@@ -29,19 +29,19 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
         title={locked ? 'Yêu cầu quyền Admin' : undefined}
         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
           locked
-            ? 'text-slate-600 cursor-not-allowed opacity-50'
+            ? 'text-slate-400 cursor-not-allowed opacity-60'
             : isActive
-            ? 'bg-gradient-to-r from-violet-600/25 to-fuchsia-500/10 border border-violet-500/35 text-white shadow-inner'
-            : 'text-slate-400 hover:bg-[#1a1444]/70 hover:text-slate-100'
+            ? 'bg-violet-50 border border-violet-200 text-violet-700 font-bold shadow-sm'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
         <div className="flex items-center gap-3">
           <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
             locked
-              ? 'bg-slate-800'
+              ? 'bg-slate-100 text-slate-400'
               : isActive
-              ? 'bg-violet-600/30 text-violet-300'
-              : 'bg-white/5'
+              ? 'bg-violet-600 text-white'
+              : 'bg-slate-100 text-slate-500'
           }`}>
             {locked ? <Lock className="w-3.5 h-3.5" /> : icon}
           </div>
@@ -53,29 +53,29 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
   };
 
   return (
-    <aside className="w-64 bg-[#0d0926] border-r border-[#180f3a] flex flex-col flex-shrink-0 min-h-screen">
+    <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col flex-shrink-0 min-h-screen text-slate-800 shadow-sm">
       {/* Logo */}
-      <div className="p-5 border-b border-[#180f3a] flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-violet-500/25 flex-shrink-0">
+      <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-md shadow-violet-500/20 flex-shrink-0">
           <Printer className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="font-black text-base leading-tight text-white">VietCraft Print</h1>
-          <span className="text-[10px] text-violet-400 font-semibold tracking-widest uppercase">Portal Xưởng In</span>
+          <h1 className="font-black text-base leading-tight text-slate-900">VietCraft Print</h1>
+          <span className="text-[10px] text-violet-600 font-bold tracking-widest uppercase">Portal Xưởng In</span>
         </div>
       </div>
 
       {/* Role indicator strip */}
-      <div className={`px-4 py-2.5 border-b border-[#180f3a] flex items-center gap-2 ${
-        isAdmin ? 'bg-violet-950/20' : 'bg-fuchsia-950/20'
+      <div className={`px-4 py-2.5 border-b border-slate-100 flex items-center gap-2 ${
+        isAdmin ? 'bg-violet-50/50' : 'bg-fuchsia-50/50'
       }`}>
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isAdmin ? 'bg-violet-700/40 text-violet-300' : 'bg-fuchsia-700/40 text-fuchsia-300'
+          isAdmin ? 'bg-violet-100 text-violet-700' : 'bg-fuchsia-100 text-fuchsia-700'
         }`}>
           {isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserCog className="w-4 h-4" />}
         </div>
         <div>
-          <p className={`text-[10px] font-black uppercase tracking-widest leading-none ${isAdmin ? 'text-violet-300' : 'text-fuchsia-300'}`}>
+          <p className={`text-[10px] font-black uppercase tracking-widest leading-none ${isAdmin ? 'text-violet-700' : 'text-fuchsia-700'}`}>
             {isAdmin ? 'Quản trị viên (Admin)' : 'Nhân viên vận hành'}
           </p>
           <p className="text-[9px] text-slate-500 leading-none mt-0.5">
@@ -86,7 +86,7 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1">
-        <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest px-3 pt-1 pb-2">Danh sách trang</p>
+        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-widest px-3 pt-1 pb-2">Danh sách trang</p>
 
         {navItem('dashboard', <LayoutDashboard className="w-4 h-4" />, '1. Dashboard (Tổng quan)')}
         
@@ -112,7 +112,7 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
           <Layers className="w-4 h-4" />,
           '4. Catalog Phôi',
           !isAdmin ? (
-            <span className="text-[9px] text-slate-600 font-bold uppercase">Admin</span>
+            <span className="text-[9px] text-slate-400 font-bold uppercase">Admin</span>
           ) : undefined,
           !isAdmin
         )}
@@ -125,14 +125,14 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
       </nav>
 
       {/* Footer */}
-      <div className="p-3.5 border-t border-[#180f3a] flex items-center justify-between text-xs text-slate-500">
+      <div className="p-3.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50 animate-pulse" />
-          <span className="text-emerald-400 font-semibold text-[10px] uppercase tracking-wider">Hệ thống sẵn sàng</span>
+          <span className="text-emerald-600 font-bold text-[10px] uppercase tracking-wider">Hệ thống sẵn sàng</span>
         </div>
         <button
           onClick={onRefresh}
-          className="p-1.5 hover:bg-[#1e174e] rounded-lg transition-colors text-slate-400 hover:text-white"
+          className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-700"
           title="Làm mới dữ liệu"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -141,4 +141,3 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
     </aside>
   );
 }
-

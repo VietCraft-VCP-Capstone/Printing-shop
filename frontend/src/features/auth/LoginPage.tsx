@@ -76,7 +76,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           (window as any).google.accounts.id.initialize({ client_id, callback: handleCredentialResponse, auto_select: false });
           (window as any).google.accounts.id.renderButton(
             document.getElementById('google-signin-btn'),
-            { theme: 'filled_blue', size: 'large', width: 340, text: 'signin_with', shape: 'pill' }
+            { theme: 'outline', size: 'large', width: 340, text: 'signin_with', shape: 'pill' }
           );
         }
         clearInterval(interval);
@@ -88,45 +88,45 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-[#06030f] p-4 font-sans relative overflow-hidden">
-      {/* Background ambient glows */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-violet-900/20 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-fuchsia-900/15 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-slate-100 p-4 font-sans relative overflow-hidden text-slate-800">
+      {/* Ambient glows */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-violet-300/30 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-fuchsia-300/25 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[#0f0a28]/90 border border-[#241a58] rounded-3xl p-8 shadow-2xl backdrop-blur-xl relative z-10 space-y-6">
+      <div className="w-full max-w-md bg-white/95 border border-slate-200/80 rounded-3xl p-8 shadow-2xl backdrop-blur-xl relative z-10 space-y-6">
         {/* Header title */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 shadow-lg shadow-violet-500/30 mb-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-fuchsia-600 shadow-lg shadow-violet-500/20 mb-2">
             <Printer className="w-7 h-7 text-white" />
           </div>
-          <span className="block text-[11px] font-extrabold uppercase tracking-widest text-violet-400">
+          <span className="block text-[11px] font-black uppercase tracking-widest text-violet-600">
             VietCraft Print Portal
           </span>
-          <h1 className="text-2xl font-black text-white">Xác Thực Tài Khoản</h1>
-          <p className="text-xs text-slate-400">Quản lý hệ thống xưởng in ấn chuyên nghiệp</p>
+          <h1 className="text-2xl font-black text-slate-900">Xác Thực Tài Khoản</h1>
+          <p className="text-xs text-slate-500">Quản lý hệ thống xưởng in ấn chuyên nghiệp</p>
         </div>
 
         {/* Error notification */}
         {error && (
-          <div className="bg-rose-950/60 border border-rose-800 text-rose-300 rounded-xl p-3.5 text-xs flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 flex-shrink-0 text-rose-400" />
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-3.5 text-xs flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 flex-shrink-0 text-rose-600" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Success notification */}
         {successMsg && (
-          <div className="bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-xl p-3.5 text-xs flex items-center gap-2">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-3.5 text-xs flex items-center gap-2">
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Tabs: Đăng nhập | Đăng ký | Google */}
-        <div className="grid grid-cols-3 gap-1 bg-[#160f3c] border border-[#2c206d] rounded-xl p-1 text-xs font-semibold">
+        <div className="grid grid-cols-3 gap-1 bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
           <button
             onClick={() => { setActiveTab('LOGIN'); setError(null); }}
             className={`py-2 rounded-lg transition-all ${
-              activeTab === 'LOGIN' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              activeTab === 'LOGIN' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Đăng nhập
@@ -134,7 +134,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <button
             onClick={() => { setActiveTab('REGISTER'); setError(null); }}
             className={`py-2 rounded-lg transition-all ${
-              activeTab === 'REGISTER' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              activeTab === 'REGISTER' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Đăng ký
@@ -142,7 +142,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           <button
             onClick={() => { setActiveTab('GOOGLE'); setError(null); }}
             className={`py-2 rounded-lg transition-all ${
-              activeTab === 'GOOGLE' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+              activeTab === 'GOOGLE' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Google
@@ -153,14 +153,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {activeTab === 'LOGIN' && (
           <form onSubmit={handleLoginSubmit} className="space-y-4 pt-1 text-xs">
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Email</label>
+              <label className="text-slate-700 font-bold mb-1 block">Email</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-[#171042] border border-[#2d2273] rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
                   placeholder="Nhập địa chỉ email..."
                   required
                 />
@@ -168,14 +168,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Mật khẩu</label>
+              <label className="text-slate-700 font-bold mb-1 block">Mật khẩu</label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-[#171042] border border-[#2d2273] rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
                   placeholder="Nhập mật khẩu..."
                   required
                 />
@@ -185,7 +185,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/30"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               Đăng Nhập
@@ -197,14 +197,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {activeTab === 'REGISTER' && (
           <form onSubmit={handleRegisterSubmit} className="space-y-4 pt-1 text-xs">
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Họ và tên</label>
+              <label className="text-slate-700 font-bold mb-1 block">Họ và tên</label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={name}
                   onChange={e => setName(e.target.value)}
-                  className="w-full bg-[#171042] border border-[#2d2273] rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
                   placeholder="Nhập họ và tên..."
                   required
                 />
@@ -212,14 +212,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Email đăng ký</label>
+              <label className="text-slate-700 font-bold mb-1 block">Email đăng ký</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full bg-[#171042] border border-[#2d2273] rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
                   placeholder="name@example.com"
                   required
                 />
@@ -227,14 +227,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Mật khẩu</label>
+              <label className="text-slate-700 font-bold mb-1 block">Mật khẩu</label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full bg-[#171042] border border-[#2d2273] rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
                   placeholder="Nhập mật khẩu mới..."
                   required
                 />
@@ -242,14 +242,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Nhập lại mật khẩu</label>
+              <label className="text-slate-700 font-bold mb-1 block">Nhập lại mật khẩu</label>
               <div className="relative">
-                <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full bg-[#171042] border border-[#2d2273] rounded-xl pl-10 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-violet-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
                   placeholder="Xác nhận lại mật khẩu..."
                   required
                 />
@@ -257,11 +257,11 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="text-slate-300 font-semibold mb-1 block">Vai trò trong hệ thống</label>
+              <label className="text-slate-700 font-bold mb-1 block">Vai trò trong hệ thống</label>
               <select
                 value={role}
                 onChange={e => setRole(e.target.value as any)}
-                className="w-full bg-[#171042] border border-[#2d2273] rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-violet-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
               >
                 <option value="OPERATOR">OPERATOR - Nhân viên in ấn & đóng gói</option>
                 <option value="ADMIN">ADMIN - Quản trị viên xưởng in</option>
@@ -271,7 +271,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/30"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Đăng Ký Tài Khoản
@@ -282,9 +282,9 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
         {/* TAB 3: ĐĂNG NHẬP BẰNG GOOGLE */}
         {activeTab === 'GOOGLE' && (
           <div className="py-6 text-center space-y-4">
-            <p className="text-xs text-slate-400">Đăng nhập thông qua tài khoản Google Workspace tổ chức</p>
+            <p className="text-xs text-slate-500">Đăng nhập thông qua tài khoản Google Workspace tổ chức</p>
             {loading ? (
-              <div className="h-[44px] bg-blue-700/20 border border-blue-600/30 rounded-full flex items-center justify-center gap-2 text-xs text-blue-300">
+              <div className="h-[44px] bg-violet-50 border border-violet-200 rounded-full flex items-center justify-center gap-2 text-xs text-violet-700 font-bold">
                 <Loader2 className="w-4 h-4 animate-spin" /> Đang xác thực với Google...
               </div>
             ) : (
@@ -295,8 +295,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
           </div>
         )}
 
-        <div className="pt-2 text-center border-t border-[#1d154d]">
-          <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+        <div className="pt-2 text-center border-t border-slate-100">
+          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
             VietCraft Partner Ecosystem &copy; 2026
           </span>
         </div>
