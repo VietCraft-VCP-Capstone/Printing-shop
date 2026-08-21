@@ -17,7 +17,7 @@ const TAB_LABELS: Record<TabType, { title: string; subtitle: string }> = {
 
 export default function Header({ activeTab, user, onLogout }: HeaderProps) {
   const isAdmin = user?.role === 'ADMIN';
-  const currentTab = TAB_LABELS[activeTab] || { title: 'Giao diện Xưởng In', subtitle: 'VietCraft Portal' };
+  const currentTab = TAB_LABELS[activeTab] || { title: 'Giao diện Xưởng In', subtitle: 'Printing Shop Portal' };
 
   return (
     <header className="h-[68px] bg-white/80 backdrop-blur-lg border-b border-slate-200/80 px-6 flex items-center justify-between flex-shrink-0 sticky top-0 z-40 shadow-xs">

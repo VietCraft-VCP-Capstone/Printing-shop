@@ -100,7 +100,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <Printer className="w-7 h-7 text-white" />
           </div>
           <span className="block text-[11px] font-black uppercase tracking-widest text-violet-600">
-            VietCraft Print Portal
+            Printing Shop Portal
           </span>
           <h1 className="text-2xl font-black text-slate-900">Xác Thực Tài Khoản</h1>
           <p className="text-xs text-slate-500">Quản lý hệ thống xưởng in ấn chuyên nghiệp</p>
@@ -297,7 +297,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
         <div className="pt-2 text-center border-t border-slate-100">
           <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-            VietCraft Partner Ecosystem &copy; 2026
+            Printing Shop Ecosystem &copy; 2026
           </span>
         </div>
       </div>

@@ -60,7 +60,7 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
           <Printer className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="font-black text-base leading-tight text-slate-900">VietCraft Print</h1>
+          <h1 className="font-black text-base leading-tight text-slate-900">Printing Shop</h1>
           <span className="text-[10px] text-violet-600 font-bold tracking-widest uppercase">Portal Xưởng In</span>
         </div>
       </div>
