@@ -1,3 +1,5 @@
+import { Pencil, Trash2 } from 'lucide-react';
+
 interface Variation {
   sku: string;
   color?: string;
@@ -13,22 +15,38 @@ interface Blank {
   category: string;
   default_image: string;
   variations: Variation[];
+  is_active?: boolean;
 }
 
 interface BlankCardProps {
   blank: Blank;
+  isAdmin?: boolean;
+  onEdit?: (b: Blank) => void;
+  onDelete?: (b: Blank) => void;
 }
 
-export default function BlankCard({ blank }: BlankCardProps) {
+export default function BlankCard({ blank, isAdmin, onEdit, onDelete }: BlankCardProps) {
+  const inactive = blank.is_active === false;
   return (
-    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 hover:border-violet-400 transition-all flex flex-col justify-between text-slate-800 shadow-xs">
+    <div className={`bg-slate-50 border rounded-2xl p-5 hover:border-violet-400 transition-all flex flex-col justify-between text-slate-800 shadow-xs ${inactive ? 'border-slate-300 opacity-70' : 'border-slate-200/80'}`}>
       <div>
-        <div className="w-full h-44 rounded-xl bg-white overflow-hidden border border-slate-200 mb-4 shadow-xs">
+        <div className="w-full h-44 rounded-xl bg-white overflow-hidden border border-slate-200 mb-4 shadow-xs relative">
           <img src={blank.default_image} alt={blank.title} className="w-full h-full object-cover" />
+          {inactive && (
+            <span className="absolute top-2 left-2 text-[10px] bg-slate-700 text-white font-bold px-2 py-0.5 rounded-md">Ngừng cung ứng</span>
+          )}
         </div>
-        <span className="text-[10px] bg-violet-50 text-violet-700 font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-violet-200">
-          {blank.category}
-        </span>
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-[10px] bg-violet-50 text-violet-700 font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border border-violet-200">
+            {blank.category}
+          </span>
+          {isAdmin && (
+            <div className="flex gap-1.5">
+              <button onClick={() => onEdit?.(blank)} className="text-slate-400 hover:text-violet-600" title="Sửa"><Pencil className="w-4 h-4" /></button>
+              <button onClick={() => onDelete?.(blank)} className="text-slate-400 hover:text-red-600" title="Xóa"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          )}
+        </div>
         <h4 className="font-bold text-slate-900 text-base mt-2">{blank.title}</h4>
         <p className="text-xs text-slate-500 mt-1 leading-relaxed">{blank.description}</p>
       </div>

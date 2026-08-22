@@ -42,7 +42,8 @@ export default function App() {
     if (!user) return;
     setLoadingBlanks(true);
     try {
-      const res = await api.get('/api/blanks');
+      // Admin thấy cả phôi đã tắt (?all=1) để quản lý; role khác chỉ thấy active.
+      const res = await api.get(user.role === 'ADMIN' ? '/api/blanks?all=1' : '/api/blanks');
       setBlanks(res.data);
     } catch (err) {
       console.error('Error fetching blanks:', err);
@@ -184,6 +185,8 @@ export default function App() {
             <CatalogTab 
               blanks={blanks}
               loadingBlanks={loadingBlanks}
+              userRole={user.role}
+              onRefresh={fetchBlanks}
             />
           )}
 
