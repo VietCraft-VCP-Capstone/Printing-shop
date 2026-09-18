@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 
 const vietcraftBE = process.env.VIETCRAFT_BE_URL || 'http://localhost:8080';
-const webhookSecret = process.env.PRINTING_WEBHOOK_SECRET || 'vietcraft_hmac_webhook_secret_key_2026';
+const webhookSecret = process.env.PRINTING_WEBHOOK_SECRET || '';
 
 // Lazy loader for node-fetch
 const getFetch = async () => {

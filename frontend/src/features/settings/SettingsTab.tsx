@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Settings as SettingsIcon, Database, Printer, Key, Eye, EyeOff, Lock } from 'lucide-react';
+import { Settings as SettingsIcon, Database, Printer, Key, Lock } from 'lucide-react';
 
 interface SettingsTabProps {
   user: any;
@@ -7,8 +6,6 @@ interface SettingsTabProps {
 
 export default function SettingsTab({ user }: SettingsTabProps) {
   const isAdmin = user?.role === 'ADMIN';
-  const [showWebhookSecret, setShowWebhookSecret] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800">
@@ -65,7 +62,9 @@ export default function SettingsTab({ user }: SettingsTabProps) {
               <label className="text-slate-600 font-bold mb-1 block">Mã Token GHN Express</label>
               <input
                 type="password"
-                defaultValue="ghn_prod_sec_839104829103"
+                readOnly
+                value="••••••••••••••••"
+                placeholder="Cấu hình qua file .env"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-400 font-mono focus:outline-none focus:border-blue-600"
               />
             </div>
@@ -73,7 +72,9 @@ export default function SettingsTab({ user }: SettingsTabProps) {
               <label className="text-slate-600 font-bold mb-1 block">Mã Token GHTK Express</label>
               <input
                 type="password"
-                defaultValue="ghtk_prod_sec_729401847192"
+                readOnly
+                value="••••••••••••••••"
+                placeholder="Cấu hình qua file .env"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 placeholder-slate-400 font-mono focus:outline-none focus:border-blue-600"
               />
             </div>
@@ -117,9 +118,14 @@ export default function SettingsTab({ user }: SettingsTabProps) {
       {/* Secret Keys Panel */}
       {isAdmin && (
         <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <Lock className="w-4 h-4 text-violet-600" />
-            <h3 className="font-bold text-slate-900 text-sm">Khóa Bí Mật Đối Tác (Chỉ Quản Trị Viên)</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-violet-600" />
+              <h3 className="font-bold text-slate-900 text-sm">Khóa Bí Mật Đối Tác (Chỉ Quản Trị Viên)</h3>
+            </div>
+            <span className="text-[11px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-semibold">
+              Quản lý an toàn qua .env
+            </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -127,36 +133,26 @@ export default function SettingsTab({ user }: SettingsTabProps) {
               <span className="font-bold text-slate-700 block">Khóa Webhook Secret (HMAC SHA-256)</span>
               <div className="flex items-center gap-2">
                 <input 
-                  type={showWebhookSecret ? 'text' : 'password'} 
+                  type="password" 
                   readOnly 
-                  value="vietcraft_hmac_webhook_secret_key_2026" 
+                  value="••••••••••••••••••••••••••••••••" 
                   className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-slate-800 flex-1"
                 />
-                <button 
-                  onClick={() => setShowWebhookSecret(!showWebhookSecret)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-lg cursor-pointer"
-                >
-                  {showWebhookSecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
               </div>
+              <p className="text-[11px] text-slate-400">Biến môi trường: PRINTING_WEBHOOK_SECRET</p>
             </div>
 
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
               <span className="font-bold text-slate-700 block">Khóa API Key Xác Thực Đối Tác</span>
               <div className="flex items-center gap-2">
                 <input 
-                  type={showApiKey ? 'text' : 'password'} 
+                  type="password" 
                   readOnly 
-                  value="vietcraft_shop_api_secret_key_2026" 
+                  value="••••••••••••••••••••••••••••••••" 
                   className="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-slate-800 flex-1"
                 />
-                <button 
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 bg-white border border-slate-200 rounded-lg cursor-pointer"
-                >
-                  {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
               </div>
+              <p className="text-[11px] text-slate-400">Biến môi trường: PRINTING_SHOP_API_KEY</p>
             </div>
           </div>
         </div>
