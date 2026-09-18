@@ -1,15 +1,34 @@
 import { useState } from 'react';
 import BlankCard from './components/BlankCard';
-import { Layers, Search, Shirt } from 'lucide-react';
+import BlankFormModal from './components/BlankFormModal';
+import { Layers, Search, Shirt, Plus } from 'lucide-react';
+import api from '../../services/api';
 
 interface CatalogTabProps {
   blanks: any[];
   loadingBlanks: boolean;
+  userRole?: string;
+  onRefresh?: () => void;
 }
 
-export default function CatalogTab({ blanks, loadingBlanks }: CatalogTabProps) {
+export default function CatalogTab({ blanks, loadingBlanks, userRole, onRefresh }: CatalogTabProps) {
+  const isAdmin = userRole === 'ADMIN';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [modalBlank, setModalBlank] = useState<any | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const openCreate = () => { setModalBlank(null); setShowModal(true); };
+  const openEdit = (b: any) => { setModalBlank(b); setShowModal(true); };
+  const handleDelete = async (b: any) => {
+    if (!window.confirm(`Xác nhận xóa phôi "${b.title}" khỏi hệ thống xưởng?`)) return;
+    try {
+      await api.delete(`/api/blanks/${b._id}`);
+      onRefresh?.();
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Xóa thất bại');
+    }
+  };
 
   // Lấy danh sách category duy nhất
   const categories = ['ALL', ...Array.from(new Set(blanks.map(b => b.category).filter(Boolean)))];
@@ -35,13 +54,23 @@ export default function CatalogTab({ blanks, loadingBlanks }: CatalogTabProps) {
             </div>
             <h2 className="text-2xl lg:text-3xl font-black tracking-tight">Danh Mục Phôi Đồng Bộ Sàn VietCraft</h2>
             <p className="text-slate-300 text-xs mt-1 max-w-2xl leading-relaxed">
-              Các mặt hàng phôi in (áo thun, hoodie, túi vải, nón...) có sẵn tại xưởng. Dữ liệu phôi và bảng giá base cost được đồng bộ tự động để người bán (Seller) trên sàn VietCraft thiết kế và định giá sản phẩm POD.
+              Các mặt hàng phôi in (áo thun, hoodie, túi vải, cốc sứ...) có sẵn tại xưởng. Dữ liệu phôi và bảng giá base cost được đồng bộ tự động để người bán (Seller) trên sàn VietCraft thiết kế và định giá sản phẩm POD.
             </p>
           </div>
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 text-center md:text-right min-w-[150px]">
-            <span className="text-[11px] text-fuchsia-300 uppercase font-black block">Tổng loại phôi</span>
-            <span className="text-3xl font-black text-white">{blanks.length}</span>
-            <span className="text-[10px] text-slate-300 block">mặt hàng sẵn sàng in</span>
+          <div className="flex items-center gap-3 self-start md:self-auto">
+            {isAdmin && (
+              <button 
+                onClick={openCreate} 
+                className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-md transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Thêm phôi in mới
+              </button>
+            )}
+            <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-3 text-center min-w-[120px]">
+              <span className="text-[10px] text-fuchsia-300 uppercase font-black block">Tổng loại phôi</span>
+              <span className="text-2xl font-black text-white">{blanks.length}</span>
+              <span className="text-[9px] text-slate-300 block">sẵn sàng in</span>
+            </div>
           </div>
         </div>
       </div>
@@ -106,10 +135,24 @@ export default function CatalogTab({ blanks, loadingBlanks }: CatalogTabProps) {
           </div>
         ) : (
           filteredBlanks.map((b) => (
-            <BlankCard key={b._id} blank={b} />
+            <BlankCard 
+              key={b._id} 
+              blank={b} 
+              isAdmin={isAdmin}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+            />
           ))
         )}
       </div>
+
+      {showModal && (
+        <BlankFormModal 
+          blank={modalBlank} 
+          onClose={() => setShowModal(false)} 
+          onSaved={() => onRefresh?.()} 
+        />
+      )}
     </div>
   );
 }

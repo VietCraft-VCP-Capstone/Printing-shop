@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -40,6 +41,9 @@ app.use(cors({
 }));
 
 app.use(express.json({ limit: '10mb' }));
+
+// Serve blank product images (ảnh phôi trơn do xưởng in quản lý).
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Initialize Database connection & seed
 connectDB();
