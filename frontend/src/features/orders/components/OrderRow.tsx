@@ -105,18 +105,23 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
           </button>
         )}
         {order.status === 'PACKAGED' && (
-          <button 
-            onClick={() => onOpenShipModal(order)}
-            disabled={userRole !== 'ADMIN'}
-            title={userRole !== 'ADMIN' ? 'Yêu cầu quyền Admin để giao hàng' : ''}
-            className={`text-white text-xs px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ml-auto shadow-xs ${
-              userRole === 'ADMIN' 
-                ? 'bg-emerald-600 hover:bg-emerald-700' 
-                : 'bg-slate-300 text-slate-500 cursor-not-allowed'
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5" /> Giao hàng
-          </button>
+          (() => {
+            const canShip = userRole === 'ADMIN' || userRole === 'LOGISTICS';
+            return (
+              <button 
+                onClick={() => onOpenShipModal(order)}
+                disabled={!canShip}
+                title={!canShip ? 'Yêu cầu quyền Admin hoặc Giao vận để giao hàng' : ''}
+                className={`text-white text-xs px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1 ml-auto shadow-xs cursor-pointer ${
+                  canShip 
+                    ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' 
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                }`}
+              >
+                <Truck className="w-3.5 h-3.5" /> Giao hàng
+              </button>
+            );
+          })()
         )}
         {order.status === 'SHIPPED' && (
           <div className="text-emerald-600 font-bold text-xs flex items-center justify-end gap-1">

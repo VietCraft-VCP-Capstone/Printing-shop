@@ -88,25 +88,40 @@ class AuthController {
   }
 
   static async devLogin(req, res) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({ error: 'Tính năng đăng nhập nhanh thử nghiệm (dev-login) bị vô hiệu hóa trên môi trường production.' });
+    }
     try {
       const { role } = req.body;
-      if (!['ADMIN', 'OPERATOR'].includes(role)) {
-        return res.status(400).json({ error: 'Role không hợp lệ. Chỉ chấp nhận ADMIN hoặc OPERATOR.' });
+      const allowed = ['ADMIN', 'OPERATOR', 'LOGISTICS', 'POD_FACTORY', 'GARMENT_FACTORY'];
+      if (!allowed.includes(role)) {
+        return res.status(400).json({ error: 'Role không hợp lệ. Chỉ chấp nhận POD_FACTORY hoặc GARMENT_FACTORY.' });
       }
 
-      const email = role === 'ADMIN' ? 'admin@vietcraft.print' : 'operator@vietcraft.print';
-      const name = role === 'ADMIN' ? 'Admin Test' : 'Operator Test';
+      let email = 'pod@vietcraft.print';
+      let name = 'Xưởng In POD';
+      let assignedRole = 'POD_FACTORY';
+
+      if (role === 'GARMENT_FACTORY') {
+        email = 'garment@vietcraft.print';
+        name = 'Xưởng May Mặc';
+        assignedRole = 'GARMENT_FACTORY';
+      } else if (role === 'POD_FACTORY' || role === 'OPERATOR' || role === 'ADMIN' || role === 'LOGISTICS') {
+        email = 'pod@vietcraft.print';
+        name = 'Xưởng In POD';
+        assignedRole = 'POD_FACTORY';
+      }
       
       let user = await User.findOne({ email });
       if (!user) {
         user = await User.create({
           email,
           name,
-          role,
+          role: assignedRole,
           avatar: '',
           google_id: 'dev_mock_id'
         });
-        console.log(`[DEV LOGIN] Registered new mock account: ${email} (${role})`);
+        console.log(`[DEV LOGIN] Registered new mock account: ${email} (${assignedRole})`);
       }
 
       // Sign local JWT token
@@ -145,7 +160,7 @@ class AuthController {
         return res.status(400).json({ error: 'Địa chỉ email này đã được đăng ký.' });
       }
 
-      const userRole = ['ADMIN', 'OPERATOR'].includes(role) ? role : 'OPERATOR';
+      const userRole = role === 'GARMENT_FACTORY' ? 'GARMENT_FACTORY' : 'POD_FACTORY';
       const user = await User.create({
         name,
         email: email.toLowerCase().trim(),

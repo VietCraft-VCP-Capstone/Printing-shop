@@ -18,6 +18,9 @@ async function connectDB() {
 }
 
 async function seedBlanksIfEmpty() {
+  if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SEED_BLANKS !== 'true') {
+    return;
+  }
   try {
     const Blank = require('../models/blank.model');
     const count = await Blank.countDocuments();

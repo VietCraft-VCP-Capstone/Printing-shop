@@ -17,7 +17,12 @@ class OrderController {
       
       const existing = await PrintOrder.findOne({ order_code: orderData.order_code });
       if (existing) {
-        return res.status(200).json({ message: 'Order already dispatched', order: existing });
+        return res.status(200).json({
+          success: true,
+          message: 'Order already dispatched',
+          supplier_order_id: existing._id,
+          order: existing
+        });
       }
 
       const newPrintOrder = await PrintOrder.create({
@@ -31,7 +36,11 @@ class OrderController {
       });
 
       console.log(`[ORDER DISPATCH] Received order ${orderData.order_code} from VietCraft.`);
-      res.status(201).json(newPrintOrder);
+      res.status(201).json({
+        success: true,
+        supplier_order_id: newPrintOrder._id,
+        order: newPrintOrder
+      });
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -54,8 +63,8 @@ class OrderController {
 
       console.log(`[STATUS UPDATE] Order ${order.order_code} status changed to ${status}`);
 
-      // Call webhook asynchronously
-      WebhookService.sendStatusUpdate(order.order_code, order.vietcraft_order_id, status);
+      // Call webhook asynchronously with supplier_order_id
+      WebhookService.sendStatusUpdate(order.order_code, order.vietcraft_order_id, status, order._id);
 
       res.json(order);
     } catch (err) {
@@ -93,8 +102,8 @@ class OrderController {
 
       console.log(`[SHIPPING DELEGATION] Order ${order.order_code} shipped via ${carrier} with tracking: ${trackingNumber}`);
 
-      // Call webhook asynchronously
-      WebhookService.sendTrackingInfo(order.order_code, order.vietcraft_order_id, carrier, trackingNumber);
+      // Call webhook asynchronously with supplier_order_id
+      WebhookService.sendTrackingInfo(order.order_code, order.vietcraft_order_id, carrier, trackingNumber, order._id);
 
       res.json(order);
     } catch (err) {

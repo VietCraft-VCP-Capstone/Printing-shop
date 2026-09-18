@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '',
+  baseURL: import.meta.env.VITE_API_URL || '',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
@@ -36,5 +36,15 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export const VIETCRAFT_API_URL = import.meta.env.VITE_VIETCRAFT_BE_URL || 'http://localhost:8080';
+
+export function resolveArtworkUrl(url?: string): string {
+  if (!url) return '/images/default-design.png';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url;
+  }
+  return `${VIETCRAFT_API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+}
 
 export default api;

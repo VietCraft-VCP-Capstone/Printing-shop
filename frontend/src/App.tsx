@@ -65,7 +65,18 @@ export default function App() {
     localStorage.setItem('printing_auth_token', token);
     localStorage.setItem('printing_auth_user', JSON.stringify(userData));
     setUser(userData);
+    setActiveTab('dashboard');
   };
+
+  // Tab guard: tự động chuyển về dashboard nếu role hiện tại không có quyền truy cập tab đó
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === 'OPERATOR' && ['logistics', 'catalog', 'settings'].includes(activeTab)) {
+      setActiveTab('dashboard');
+    } else if (user.role === 'LOGISTICS' && ['orders', 'catalog', 'settings'].includes(activeTab)) {
+      setActiveTab('dashboard');
+    }
+  }, [user, activeTab]);
 
   const handleLogout = () => {
     localStorage.removeItem('printing_auth_token');
@@ -157,11 +168,12 @@ export default function App() {
               onUpdateStatus={handleUpdateStatus}
               onOpenShipModal={setShippingModalOrder}
               onNavigateToOrders={() => setActiveTab('orders')}
+              onNavigateToLogistics={() => setActiveTab('logistics')}
               userRole={user.role}
             />
           )}
 
-          {activeTab === 'orders' && (
+          {activeTab === 'orders' && (user.role === 'ADMIN' || user.role === 'OPERATOR') && (
             <OrdersTab 
               orders={orders}
               loadingOrders={loadingOrders}
@@ -172,7 +184,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'logistics' && (
+          {activeTab === 'logistics' && (user.role === 'ADMIN' || user.role === 'LOGISTICS') && (
             <LogisticsTab
               orders={orders}
               userRole={user.role}
@@ -180,14 +192,14 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'catalog' && (
+          {activeTab === 'catalog' && user.role === 'ADMIN' && (
             <CatalogTab 
               blanks={blanks}
               loadingBlanks={loadingBlanks}
             />
           )}
 
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && user.role === 'ADMIN' && (
             <SettingsTab user={user} />
           )}
         </div>

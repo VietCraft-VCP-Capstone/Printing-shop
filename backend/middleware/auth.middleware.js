@@ -43,7 +43,42 @@ function requireRole(allowedRoles) {
   };
 }
 
+/**
+ * Cho phép truy cập nếu có X-API-Key hợp lệ (Partner VietCraft) HOẶC Bearer JWT hợp lệ (Nhân viên xưởng)
+ */
+async function authenticatePartnerOrStaff(req, res, next) {
+  const expectedKey = process.env.PRINTING_SHOP_API_KEY;
+  const providedKey = req.headers['x-api-key'] || (req.headers['authorization']?.startsWith('ApiKey ') ? req.headers['authorization'].replace('ApiKey ', '') : null);
+
+  // 1. Kiểm tra X-API-Key từ sàn VietCraft
+  if (expectedKey && providedKey && providedKey === expectedKey) {
+    req.isPartner = true;
+    return next();
+  }
+
+  // 2. Kiểm tra JWT Token đăng nhập từ nhân viên xưởng
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, jwtSecret);
+      const user = await User.findById(decoded.id);
+      if (user) {
+        req.user = user;
+        return next();
+      }
+    } catch {
+      // Bỏ qua lỗi verify để trả về 401 chung bên dưới
+    }
+  }
+
+  return res.status(401).json({
+    error: 'Unauthorized: Endpoint này được bảo vệ. Yêu cầu cung cấp X-API-Key hợp lệ hoặc Token đăng nhập.'
+  });
+}
+
 module.exports = {
   authenticate,
-  requireRole
+  requireRole,
+  authenticatePartnerOrStaff
 };
