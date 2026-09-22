@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
 
 async function connectDB() {
   const mongoUri = process.env.MONGO_URI;
@@ -8,7 +9,15 @@ async function connectDB() {
   }
 
   try {
-    await mongoose.connect(mongoUri);
+    try {
+      dns.setServers(['8.8.8.8', '1.1.1.1']);
+    } catch (e) {
+      // ignore
+    }
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000
+    });
     console.log('Connected to MongoDB Atlas (database: printing) successfully.');
     await seedBlanksIfEmpty();
   } catch (err) {

@@ -23,6 +23,8 @@ class OrderController {
       const newPrintOrder = await PrintOrder.create({
         vietcraft_order_id: orderData.vietcraft_order_id,
         order_code: orderData.order_code,
+        shop_name: orderData.shop_name || 'VietCraft Shop',
+        seller_id: orderData.seller_id,
         buyer_name: orderData.buyer_name,
         recipient_phone: orderData.recipient_phone || orderData.shipping_address?.phone || '',
         shipping_address: orderData.shipping_address,
@@ -30,7 +32,7 @@ class OrderController {
         status: 'RECEIVED'
       });
 
-      console.log(`[ORDER DISPATCH] Received order ${orderData.order_code} from VietCraft.`);
+      console.log(`[ORDER DISPATCH] Received order ${orderData.order_code} from VietCraft (${orderData.shop_name || 'VietCraft Shop'}).`);
       res.status(201).json(newPrintOrder);
     } catch (err) {
       res.status(400).json({ error: err.message });
@@ -39,12 +41,17 @@ class OrderController {
 
   static async updateStatus(req, res) {
     try {
-      const { status } = req.body;
+      const { status, rejection_reason } = req.body;
       const orderId = req.params.id;
+
+      const updateData = { status };
+      if (status === 'REJECTED' && rejection_reason) {
+        updateData.rejection_reason = rejection_reason;
+      }
 
       const order = await PrintOrder.findByIdAndUpdate(
         orderId, 
-        { status }, 
+        updateData, 
         { new: true }
       );
 
@@ -55,7 +62,7 @@ class OrderController {
       console.log(`[STATUS UPDATE] Order ${order.order_code} status changed to ${status}`);
 
       // Call webhook asynchronously
-      WebhookService.sendStatusUpdate(order.order_code, order.vietcraft_order_id, status);
+      WebhookService.sendStatusUpdate(order.order_code, order.vietcraft_order_id, status, order.rejection_reason);
 
       res.json(order);
     } catch (err) {

@@ -7,17 +7,22 @@ const getFetch = async () => {
 };
 
 class WebhookService {
-  static async sendStatusUpdate(orderCode, vietcraftOrderId, status) {
+  static async sendStatusUpdate(orderCode, vietcraftOrderId, status, rejectionReason) {
     try {
       const fetch = await getFetch();
+      const payload = {
+        order_code: orderCode,
+        vietcraft_order_id: vietcraftOrderId,
+        status: status
+      };
+      if (rejectionReason) {
+        payload.rejection_reason = rejectionReason;
+      }
+
       const response = await fetch(`${vietcraftBE}/api/orders/webhook/printer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_code: orderCode,
-          vietcraft_order_id: vietcraftOrderId,
-          status: status
-        })
+        body: JSON.stringify(payload)
       });
 
       const responseText = await response.text();
