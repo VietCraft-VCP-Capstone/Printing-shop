@@ -76,14 +76,21 @@ export default function App() {
     setBlanks([]);
   };
 
-  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, currentStatus: string, rejectionReason?: string) => {
     let nextStatus = '';
-    if (currentStatus === 'RECEIVED') nextStatus = 'PRINTING';
+    if (rejectionReason) {
+      nextStatus = 'REJECTED';
+    } else if (currentStatus === 'RECEIVED') nextStatus = 'PRINTING';
     else if (currentStatus === 'PRINTING') nextStatus = 'PACKAGED';
+    else if (currentStatus === 'SHIPPED') nextStatus = 'DELIVERED';
     else return;
 
     try {
-      const res = await api.put(`/api/orders/${orderId}/status`, { status: nextStatus });
+      const payload: any = { status: nextStatus };
+      if (rejectionReason) {
+        payload.rejection_reason = rejectionReason;
+      }
+      const res = await api.put(`/api/orders/${orderId}/status`, payload);
       setOrders(prev => prev.map(o => o._id === orderId ? res.data : o));
     } catch (err: any) {
       alert('Lỗi cập nhật trạng thái: ' + (err.response?.data?.error || err.message));
