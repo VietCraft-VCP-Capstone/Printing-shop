@@ -1,6 +1,6 @@
-import { Printer, LayoutDashboard, Layers, RefreshCw, ShieldCheck, UserCog, Lock, Truck, Settings as SettingsIcon } from 'lucide-react';
+import { Printer, LayoutDashboard, Layers, RefreshCw, ShieldCheck, UserCog, Lock, Truck, Settings as SettingsIcon, ClipboardList } from 'lucide-react';
 
-export type TabType = 'dashboard' | 'orders' | 'logistics' | 'catalog' | 'settings';
+export type TabType = 'dashboard' | 'orders' | 'refunds' | 'logistics' | 'catalog' | 'settings';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -22,6 +22,7 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
   }> = [
     { tab: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
     { tab: 'orders', icon: Printer, label: 'Đơn in ấn', badgeCount: pendingJobsCount },
+    { tab: 'refunds', icon: ClipboardList, label: 'Yêu cầu Refund POD' },
     { tab: 'logistics', icon: Truck, label: 'Vận chuyển' },
     { tab: 'catalog', icon: Layers, label: 'Kho phôi POD', adminOnly: !isAdmin },
     { tab: 'settings', icon: SettingsIcon, label: 'Cấu hình hệ thống' },

@@ -16,6 +16,10 @@ const TAB_METADATA: Record<TabType, { title: string; subtitle: string }> = {
     title: 'Quản lý đơn in ấn', 
     subtitle: 'Tiếp nhận file thiết kế, duyệt in và đóng gói sản phẩm' 
   },
+  refunds: { 
+    title: 'Refund POD · Printer', 
+    subtitle: 'Phản hồi yêu cầu Refund được Seller chuyển từ VietCraft' 
+  },
   logistics: { 
     title: 'Vận chuyển & Giao vận', 
     subtitle: 'Ủy quyền xuất kho và tích hợp mã vận đơn GHN / GHTK' 
