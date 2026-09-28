@@ -10,6 +10,7 @@ interface HeaderProps {
 const TAB_LABELS: Record<TabType, { title: string; subtitle: string }> = {
   dashboard: { title: 'Trang 1: Bảng Điều Khiển (Dashboard)', subtitle: 'Tổng quan chỉ số xưởng in & tiến độ công việc' },
   orders:    { title: 'Trang 2: Quản Lý Đơn In Ấn (Orders)', subtitle: 'Danh sách đơn hàng cần xử lý & chuyển giao' },
+  refunds: { title: 'Refund POD · Printer', subtitle: 'Phản hồi yêu cầu Refund được Seller chuyển từ VietCraft' },
   logistics: { title: 'Trang 3: Trang Logi (Vận Chuyển & Giao Vận)', subtitle: 'Ủy quyền giao hàng GHN, GHTK, ViettelPost' },
   catalog:   { title: 'Trang 4: Catalog Phôi Sản Phẩm (Catalog)', subtitle: 'Danh mục phôi vật tư cung ứng cho VietCraft' },
   settings:  { title: 'Trang 5: Cấu Hình Hệ Thống (Settings)', subtitle: 'Thiết lập máy in, API Keys & Webhook realtime' },

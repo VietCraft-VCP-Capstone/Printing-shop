@@ -4,6 +4,7 @@ import Sidebar, { type TabType } from './components/Sidebar';
 import Header from './components/Header';
 import DashboardTab from './features/dashboard/DashboardTab';
 import OrdersTab from './features/orders/OrdersTab';
+import RefundsTab from './features/orders/RefundsTab';
 import LogisticsTab from './features/logistics/LogisticsTab';
 import CatalogTab from './features/catalog/CatalogTab';
 import SettingsTab from './features/settings/SettingsTab';
@@ -171,6 +172,8 @@ export default function App() {
               userRole={user.role}
             />
           )}
+
+          {activeTab === 'refunds' && <RefundsTab />}
 
           {activeTab === 'logistics' && (
             <LogisticsTab
