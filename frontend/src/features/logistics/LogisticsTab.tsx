@@ -14,85 +14,98 @@ export default function LogisticsTab({ orders, userRole, onOpenShipModal }: Logi
   const shippedOrders = orders.filter(o => o.status === 'SHIPPED');
   const readyToShipOrders = orders.filter(o => o.status === 'PACKAGED');
 
+  const getCarrier = (o: any) => o.carrier || o.tracking_info?.carrier || 'GHN';
+  const getTrackingNumber = (o: any) => o.tracking_number || o.tracking_info?.tracking_code || '---';
+
   const filteredShipped = shippedOrders.filter(o => {
-    const matchCarrier = carrierFilter === 'ALL' || o.tracking_info?.carrier === carrierFilter;
+    const carrier = getCarrier(o);
+    const tracking = getTrackingNumber(o);
+    const matchCarrier = carrierFilter === 'ALL' || carrier === carrierFilter;
     const matchSearch = !searchCode || 
-      o.order_code.toLowerCase().includes(searchCode.toLowerCase()) ||
-      o.tracking_info?.tracking_code?.toLowerCase().includes(searchCode.toLowerCase()) ||
-      o.buyer_name.toLowerCase().includes(searchCode.toLowerCase());
+      o.order_code?.toLowerCase().includes(searchCode.toLowerCase()) ||
+      tracking.toLowerCase().includes(searchCode.toLowerCase()) ||
+      o.buyer_name?.toLowerCase().includes(searchCode.toLowerCase());
     return matchCarrier && matchSearch;
   });
 
   return (
     <div className="space-y-6 animate-fade-in text-slate-800">
-      {/* Distinction Header Banner */}
-      <div className="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-white border border-blue-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-400/10 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none" />
-        <div className="flex items-start justify-between relative z-10">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold uppercase tracking-wider mb-3">
-              <Truck className="w-3.5 h-3.5" /> Trang 3: Logi & Giao Vận
-            </div>
-            <h2 className="text-2xl font-black text-slate-900">Quản Lý Vận Chuyển (Logistics)</h2>
-            <p className="text-slate-600 text-sm mt-1 max-w-2xl">
-              Trang chuyên trách theo dõi hành trình đơn hàng, tạo đơn vận chuyển trực tiếp qua cổng kết nối <strong className="text-blue-700">GHN (Giao Hàng Nhanh)</strong> và <strong className="text-emerald-700">GHTK (Giao Hàng Tiết Kiệm)</strong>.
-            </p>
+      {/* Overview Banner */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-semibold mb-2 border border-blue-100">
+            <Truck className="w-3.5 h-3.5" /> Điều phối vận tải đối tác
           </div>
-          <div className="bg-white border border-slate-200 rounded-xl p-4 text-right shadow-xs">
-            <span className="text-xs text-slate-500 font-semibold block">Đơn chờ bàn giao vận chuyển</span>
-            <span className="text-2xl font-black text-amber-600">{readyToShipOrders.length} đơn</span>
-          </div>
+          <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+            Quản lý Giao Vận & Xuất Kho
+          </h2>
+          <p className="text-xs text-slate-500 mt-1 max-w-xl">
+            Xuất đơn vận chuyển trực tiếp qua cổng kết nối <strong className="text-slate-700">GHN (Giao Hàng Nhanh)</strong> và <strong className="text-slate-700">GHTK (Giao Hàng Tiết Kiệm)</strong>, đồng bộ tự động cho người mua theo dõi.
+          </p>
+        </div>
+
+        <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl px-4 py-3 text-right flex-shrink-0">
+          <span className="text-[11px] text-amber-800 font-semibold block">Chờ bàn giao vận chuyển</span>
+          <span className="text-xl font-bold text-amber-900">{readyToShipOrders.length} đơn</span>
         </div>
       </div>
 
       {/* Summary KPI cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Tổng vận đơn đã xuất</span>
-          <p className="text-xl font-black text-slate-900 mt-1">{shippedOrders.length} vận đơn</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+          <span className="text-xs font-semibold text-slate-500 block">Tổng vận đơn xuất</span>
+          <p className="text-2xl font-bold text-slate-900 tracking-tight mt-1">{shippedOrders.length}</p>
+          <span className="text-[11px] text-slate-400 mt-1 block">Tất cả hãng giao</span>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Hợp tác GHN Express</span>
-          <p className="text-xl font-black text-orange-600 mt-1">
-            {shippedOrders.filter(o => o.tracking_info?.carrier === 'GHN').length} đơn
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+          <span className="text-xs font-semibold text-slate-500 block">GHN Express</span>
+          <p className="text-2xl font-bold text-orange-600 tracking-tight mt-1">
+            {shippedOrders.filter(o => getCarrier(o) === 'GHN').length}
           </p>
+          <span className="text-[11px] text-slate-400 mt-1 block">Giao nhanh 1-2 ngày</span>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Hợp tác GHTK Express</span>
-          <p className="text-xl font-black text-emerald-600 mt-1">
-            {shippedOrders.filter(o => o.tracking_info?.carrier === 'GHTK').length} đơn
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+          <span className="text-xs font-semibold text-slate-500 block">GHTK Express</span>
+          <p className="text-2xl font-bold text-emerald-600 tracking-tight mt-1">
+            {shippedOrders.filter(o => getCarrier(o) === 'GHTK').length}
           </p>
+          <span className="text-[11px] text-slate-400 mt-1 block">Tiết kiệm 2-3 ngày</span>
         </div>
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Đơn đang lưu thông</span>
-          <p className="text-xl font-black text-violet-600 mt-1">
-            {shippedOrders.length > 0 ? `${shippedOrders.length} đơn` : '--'}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+          <span className="text-xs font-semibold text-slate-500 block">Tỷ lệ xuất kho</span>
+          <p className="text-2xl font-bold text-violet-600 tracking-tight mt-1">
+            {orders.length > 0 ? Math.round((shippedOrders.length / orders.length) * 100) : 0}%
           </p>
+          <span className="text-[11px] text-slate-400 mt-1 block">Hoàn tất quy trình</span>
         </div>
       </div>
 
       {/* Ready to ship alert block */}
       {readyToShipOrders.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-xs">
-          <h3 className="text-sm font-bold text-amber-900 flex items-center gap-2 mb-3">
+        <div className="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wider flex items-center gap-2 mb-3">
             <PackageCheck className="w-4 h-4 text-amber-700" />
-            Đơn hàng in xong đã đóng gói - Chờ chọn hãng vận chuyển ({readyToShipOrders.length})
+            Đơn đã in & đóng gói — Chờ chọn đơn vị vận chuyển ({readyToShipOrders.length})
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {readyToShipOrders.map(order => (
               <div key={order._id} className="bg-white border border-amber-200/70 rounded-xl p-3.5 flex justify-between items-center shadow-xs">
-                <div>
-                  <span className="font-bold text-sm text-slate-900">{order.order_code}</span>
-                  <p className="text-xs text-slate-500">{order.buyer_name} • {order.shipping_address?.province || 'VN'}</p>
+                <div className="min-w-0 pr-2">
+                  <span className="font-mono font-bold text-xs text-slate-900 block truncate">{order.order_code}</span>
+                  <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                    {order.buyer_name} • {order.shipping_address?.province_id || order.shipping_address?.address_detail || 'VN'}
+                  </p>
                 </div>
                 <button
                   onClick={() => onOpenShipModal(order)}
                   disabled={userRole !== 'ADMIN'}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold text-white flex items-center gap-1 ${
-                    userRole === 'ADMIN' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-xs' : 'bg-slate-300 text-slate-500 opacity-60 cursor-not-allowed'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 transition-all ${
+                    userRole === 'ADMIN' 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs' 
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >
-                  <Truck className="w-3.5 h-3.5" /> Gửi Logi
+                  <Truck className="w-3.5 h-3.5" /> Giao hàng
                 </button>
               </div>
             ))}
@@ -101,32 +114,32 @@ export default function LogisticsTab({ orders, userRole, onOpenShipModal }: Logi
       )}
 
       {/* Logistics tracking list */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
-            <Truck className="w-5 h-5 text-blue-600" />
-            Danh sách đơn vận chuyển đang lưu thông
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2 tracking-tight">
+            <Truck className="w-4 h-4 text-blue-600" />
+            Danh sách vận đơn đang lưu thông
           </h3>
 
-          {/* Filters */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          {/* Search & Filters */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Tìm mã vận đơn, mã đơn..."
+                placeholder="Tìm mã vận đơn..."
                 value={searchCode}
                 onChange={e => setSearchCode(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 font-medium"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 font-medium"
               />
             </div>
-            <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 text-xs font-bold">
+            <div className="flex bg-slate-100 border border-slate-200/80 rounded-xl p-0.5 text-xs font-medium">
               {(['ALL', 'GHN', 'GHTK'] as const).map(carrier => (
                 <button
                   key={carrier}
                   onClick={() => setCarrierFilter(carrier)}
-                  className={`px-3 py-1 rounded-lg font-bold transition-all ${
-                    carrierFilter === carrier ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  className={`px-2.5 py-1 rounded-lg transition-all ${
+                    carrierFilter === carrier ? 'bg-white text-slate-900 font-bold shadow-xs' : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
                   {carrier === 'ALL' ? 'Tất cả' : carrier}
@@ -140,57 +153,63 @@ export default function LogisticsTab({ orders, userRole, onOpenShipModal }: Logi
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold tracking-wider">
+              <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 uppercase font-semibold text-[11px] tracking-wider">
                 <th className="py-3 px-4">Mã đơn in</th>
-                <th className="py-3 px-4">Đơn vị giao hàng</th>
-                <th className="py-3 px-4">Mã Vận Đơn (Tracking Code)</th>
+                <th className="py-3 px-4">Đơn vị giao</th>
+                <th className="py-3 px-4">Mã Vận Đơn</th>
                 <th className="py-3 px-4">Người nhận & Địa chỉ</th>
-                <th className="py-3 px-4 text-center">Trạng thái Logi</th>
-                <th className="py-3 px-4 text-right">Hành động</th>
+                <th className="py-3 px-4 text-center">Trạng thái</th>
+                <th className="py-3 px-4 text-right">Chi tiết</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredShipped.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12 text-slate-400">
-                    Chưa có đơn vận chuyển nào phù hợp trong danh sách Logi.
+                    Chưa có đơn vận chuyển nào phù hợp trong danh sách.
                   </td>
                 </tr>
               ) : (
-                filteredShipped.map(o => (
-                  <tr key={o._id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{o.order_code}</td>
-                    <td className="py-3.5 px-4">
-                      <span className={`px-2.5 py-1 rounded-lg font-black text-[10px] ${
-                        o.tracking_info?.carrier === 'GHN' 
-                          ? 'bg-orange-50 text-orange-700 border border-orange-200' 
-                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      }`}>
-                        {o.tracking_info?.carrier || 'GHN'} EXPRESS
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-blue-700 font-bold">
-                      {o.tracking_info?.tracking_code || 'N/A'}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="font-bold text-slate-800 block">{o.buyer_name}</span>
-                      <span className="text-slate-500 text-[11px] truncate max-w-[200px] block">{o.shipping_address?.full_address || 'Địa chỉ khách'}</span>
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" /> Đang trung chuyển
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => alert(`Tra cứu hành trình vận đơn ${o.tracking_info?.tracking_code || o.order_code}`)}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-1"
-                      >
-                        Tra cứu <ExternalLink className="w-3 h-3" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                filteredShipped.map(o => {
+                  const carrier = getCarrier(o);
+                  const tracking = getTrackingNumber(o);
+                  return (
+                    <tr key={o._id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">{o.order_code}</td>
+                      <td className="py-3.5 px-4">
+                        <span className={`px-2 py-0.5 rounded-md font-semibold text-[10px] uppercase ${
+                          carrier === 'GHN' 
+                            ? 'bg-orange-50 text-orange-700 border border-orange-200' 
+                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          {carrier} Express
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-blue-700 font-semibold">
+                        {tracking}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-slate-800 block">{o.buyer_name}</span>
+                        <span className="text-slate-500 text-[11px] truncate max-w-[200px] block">
+                          {o.shipping_address?.address_detail || o.shipping_address?.full_address || 'Địa chỉ nhận'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <span className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" /> Đang vận chuyển
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <button
+                          onClick={() => alert(`Tra cứu hành trình vận đơn ${tracking}`)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center gap-1"
+                        >
+                          Tra cứu <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

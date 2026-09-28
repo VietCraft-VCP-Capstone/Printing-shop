@@ -43,7 +43,8 @@ export default function App() {
     if (!user) return;
     setLoadingBlanks(true);
     try {
-      const res = await api.get('/api/blanks');
+      // Admin thấy cả phôi đã tắt (?all=1) để quản lý; role khác chỉ thấy active.
+      const res = await api.get(user.role === 'ADMIN' ? '/api/blanks?all=1' : '/api/blanks');
       setBlanks(res.data);
     } catch (err) {
       console.error('Error fetching blanks:', err);
@@ -76,14 +77,21 @@ export default function App() {
     setBlanks([]);
   };
 
-  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
+  const handleUpdateStatus = async (orderId: string, currentStatus: string, rejectionReason?: string) => {
     let nextStatus = '';
-    if (currentStatus === 'RECEIVED') nextStatus = 'PRINTING';
+    if (rejectionReason) {
+      nextStatus = 'REJECTED';
+    } else if (currentStatus === 'RECEIVED') nextStatus = 'PRINTING';
     else if (currentStatus === 'PRINTING') nextStatus = 'PACKAGED';
+    else if (currentStatus === 'SHIPPED') nextStatus = 'DELIVERED';
     else return;
 
     try {
-      const res = await api.put(`/api/orders/${orderId}/status`, { status: nextStatus });
+      const payload: any = { status: nextStatus };
+      if (rejectionReason) {
+        payload.rejection_reason = rejectionReason;
+      }
+      const res = await api.put(`/api/orders/${orderId}/status`, payload);
       setOrders(prev => prev.map(o => o._id === orderId ? res.data : o));
     } catch (err: any) {
       alert('Lỗi cập nhật trạng thái: ' + (err.response?.data?.error || err.message));
@@ -187,6 +195,8 @@ export default function App() {
             <CatalogTab 
               blanks={blanks}
               loadingBlanks={loadingBlanks}
+              userRole={user.role}
+              onRefresh={fetchBlanks}
             />
           )}
 

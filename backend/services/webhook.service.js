@@ -1,4 +1,6 @@
+const crypto = require('crypto');
 const vietcraftBE = process.env.VIETCRAFT_BE_URL || 'http://localhost:8080';
+const webhookSecret = process.env.PRINTER_WEBHOOK_SECRET || process.env.VIETCRAFT_WEBHOOK_SECRET || 'vietcraft_hmac_webhook_secret_key_2026';
 
 // Lazy loader for node-fetch@2 (which is CommonJS compatible, or we can use dynamic import for ESM node-fetch)
 const getFetch = async () => {
@@ -7,17 +9,28 @@ const getFetch = async () => {
 };
 
 class WebhookService {
-  static async sendStatusUpdate(orderCode, vietcraftOrderId, status) {
+  static async sendStatusUpdate(orderCode, vietcraftOrderId, status, rejectionReason) {
     try {
       const fetch = await getFetch();
+      const payload = {
+        order_code: orderCode,
+        vietcraft_order_id: vietcraftOrderId,
+        status: status
+      };
+      if (rejectionReason) {
+        payload.rejection_reason = rejectionReason;
+      }
+
+      const bodyStr = JSON.stringify(payload);
+      const signature = crypto.createHmac('sha256', webhookSecret).update(bodyStr).digest('hex');
+
       const response = await fetch(`${vietcraftBE}/api/orders/webhook/printer`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_code: orderCode,
-          vietcraft_order_id: vietcraftOrderId,
-          status: status
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-signature': signature
+        },
+        body: bodyStr
       });
 
       const responseText = await response.text();
@@ -32,15 +45,23 @@ class WebhookService {
   static async sendTrackingInfo(orderCode, vietcraftOrderId, carrier, trackingNumber) {
     try {
       const fetch = await getFetch();
+      const payload = {
+        order_code: orderCode,
+        vietcraft_order_id: vietcraftOrderId,
+        carrier: carrier,
+        tracking_number: trackingNumber
+      };
+
+      const bodyStr = JSON.stringify(payload);
+      const signature = crypto.createHmac('sha256', webhookSecret).update(bodyStr).digest('hex');
+
       const response = await fetch(`${vietcraftBE}/api/orders/webhook/tracking`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_code: orderCode,
-          vietcraft_order_id: vietcraftOrderId,
-          carrier: carrier,
-          tracking_number: trackingNumber
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-signature': signature
+        },
+        body: bodyStr
       });
 
       const responseText = await response.text();

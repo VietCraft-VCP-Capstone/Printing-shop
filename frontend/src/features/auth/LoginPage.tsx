@@ -185,7 +185,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25 cursor-pointer disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               Đăng Nhập
@@ -271,7 +271,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25 cursor-pointer disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Đăng Ký Tài Khoản
