@@ -20,9 +20,50 @@ async function connectDB() {
     });
     console.log('Connected to MongoDB Atlas (database: printing) successfully.');
     await seedBlanksIfEmpty();
+    await seedUsersIfEmpty();
   } catch (err) {
     console.error('MongoDB connection error:', err);
     process.exit(1);
+  }
+}
+
+async function seedUsersIfEmpty() {
+  try {
+    const User = require('../models/user.model');
+
+    // Seed default Admin
+    let admin = await User.findOne({ email: 'admin@vietcraft.print' });
+    if (!admin) {
+      await User.create({
+        email: 'admin@vietcraft.print',
+        name: 'Quản Trị Viên Xưởng In',
+        password: '123456',
+        role: 'ADMIN',
+        avatar: ''
+      });
+      console.log('Seeded default Admin: admin@vietcraft.print / 123456');
+    } else if (!admin.password) {
+      admin.password = '123456';
+      await admin.save();
+    }
+
+    // Seed default Operator
+    let operator = await User.findOne({ email: 'operator@vietcraft.print' });
+    if (!operator) {
+      await User.create({
+        email: 'operator@vietcraft.print',
+        name: 'Kỹ Thuật Viên Vận Hành',
+        password: '123456',
+        role: 'OPERATOR',
+        avatar: ''
+      });
+      console.log('Seeded default Operator: operator@vietcraft.print / 123456');
+    } else if (!operator.password) {
+      operator.password = '123456';
+      await operator.save();
+    }
+  } catch (err) {
+    console.error('Seeding users error:', err);
   }
 }
 

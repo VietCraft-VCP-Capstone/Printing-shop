@@ -82,6 +82,7 @@ export default function App() {
       nextStatus = 'REJECTED';
     } else if (currentStatus === 'RECEIVED') nextStatus = 'PRINTING';
     else if (currentStatus === 'PRINTING') nextStatus = 'PACKAGED';
+    else if (currentStatus === 'SHIPPED') nextStatus = 'DELIVERED';
     else return;
 
     try {

@@ -66,19 +66,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     }
   };
 
-  const handleDevLogin = async (devRole: 'ADMIN' | 'OPERATOR') => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.post('/api/auth/dev-login', { role: devRole });
-      onLoginSuccess(res.data.token, res.data.user);
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Đăng nhập thử nghiệm thất bại.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     let attempts = 0;
     const interval = setInterval(() => {
@@ -198,7 +185,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25 cursor-pointer disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               Đăng Nhập
@@ -284,7 +271,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25 cursor-pointer disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Đăng Ký Tài Khoản
@@ -307,36 +294,6 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             )}
           </div>
         )}
-
-        {/* Quick Dev Login for Testing */}
-        <div className="pt-3 border-t border-slate-100">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-400">
-              ⚡ Truy cập nhanh (Dành cho Test)
-            </span>
-            <span className="text-[10px] text-violet-600 font-semibold">1-Click Login</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleDevLogin('ADMIN')}
-              className="px-3 py-2 rounded-xl bg-violet-50 border border-violet-200 text-violet-700 hover:bg-violet-100 text-xs font-bold transition-all text-center flex flex-col items-center justify-center shadow-xs"
-            >
-              <span>Vào quyền ADMIN</span>
-              <span className="text-[9px] font-normal text-violet-500">Toàn quyền (Duyệt/Giao/Phôi)</span>
-            </button>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => handleDevLogin('OPERATOR')}
-              className="px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-700 hover:bg-slate-200 text-xs font-bold transition-all text-center flex flex-col items-center justify-center shadow-xs"
-            >
-              <span>Vào quyền OPERATOR</span>
-              <span className="text-[9px] font-normal text-slate-500">Vận hành in & Đóng gói</span>
-            </button>
-          </div>
-        </div>
 
         <div className="pt-2 text-center border-t border-slate-100">
           <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">

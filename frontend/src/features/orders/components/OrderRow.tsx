@@ -124,12 +124,14 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
           order.status === 'PRINTING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
           order.status === 'PACKAGED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
           order.status === 'SHIPPED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+          order.status === 'DELIVERED' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
           'bg-rose-50 text-rose-700 border-rose-200'
         }`}>
           {order.status === 'RECEIVED' && 'Đã nhận file'}
           {order.status === 'PRINTING' && 'Đang in ấn'}
           {order.status === 'PACKAGED' && 'Đã đóng gói'}
           {order.status === 'SHIPPED' && 'Đang giao hàng'}
+          {order.status === 'DELIVERED' && 'Giao thành công'}
           {order.status === 'REJECTED' && 'Từ chối / Lỗi in'}
         </span>
 
@@ -142,7 +144,7 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
           </div>
         )}
 
-        {order.status === 'SHIPPED' && order.tracking_number && (
+        {(order.status === 'SHIPPED' || order.status === 'DELIVERED') && order.tracking_number && (
           <div className="text-[10px] text-slate-500 font-mono mt-1">
             <strong>{order.carrier}</strong>: {order.tracking_number}
           </div>
@@ -203,8 +205,23 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
         )}
 
         {order.status === 'SHIPPED' && (
-          <div className="text-blue-600 font-semibold text-xs flex items-center justify-end gap-1">
-            <CheckCircle className="w-3.5 h-3.5 text-blue-600" /> Đã xuất kho
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-blue-600 font-semibold text-xs flex items-center gap-1">
+              <Truck className="w-3.5 h-3.5 text-blue-600" /> Đang giao
+            </span>
+            <button
+              onClick={() => onUpdateStatus(order._id, order.status)}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
+              title="Xác nhận shipper đã phát hàng thành công"
+            >
+              Giao thành công
+            </button>
+          </div>
+        )}
+
+        {order.status === 'DELIVERED' && (
+          <div className="text-emerald-700 font-semibold text-xs flex items-center justify-end gap-1">
+            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Đã giao xong
           </div>
         )}
 

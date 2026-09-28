@@ -30,7 +30,7 @@ const PrintOrderSchema = new mongoose.Schema({
   }],
   status: {
     type: String,
-    enum: ['RECEIVED', 'PRINTING', 'PACKAGED', 'SHIPPED', 'REJECTED'],
+    enum: ['RECEIVED', 'PRINTING', 'PACKAGED', 'SHIPPED', 'DELIVERED', 'REJECTED'],
     default: 'RECEIVED'
   },
   rejection_reason: { type: String },
