@@ -14,7 +14,7 @@ const getFetch = async () => {
 class AuthController {
   static async googleLogin(req, res) {
     try {
-      const { id_token } = req.body;
+      const { id_token, role: requestedRole, workshop_name } = req.body;
       if (!id_token) {
         return res.status(400).json({ error: 'Thiếu Google ID Token.' });
       }
@@ -43,24 +43,27 @@ class AuthController {
       // Find or create user
       let user = await User.findOne({ email });
       if (!user) {
-        // If it's the first user, make them ADMIN
-        const userCount = await User.countDocuments({});
-        const role = userCount === 0 ? 'ADMIN' : 'OPERATOR';
+        const effectiveRole = (requestedRole === 'SELLER') ? 'SELLER' : 'PRINTER';
 
         user = await User.create({
           email,
           name: name || email.split('@')[0],
           avatar: picture || '',
-          role,
+          role: effectiveRole,
+          workshop_name: effectiveRole === 'PRINTER' ? (workshop_name || `${name || email.split('@')[0]} Workshop`) : undefined,
           google_id
         });
-        console.log(`[USER REGISTRATION] Created new user: ${email} with role: ${role}`);
+        console.log(`[USER REGISTRATION - GOOGLE] Created new user: ${email} with role: ${effectiveRole}`);
       } else {
         // Update user name/avatar if they changed in Google
         let updated = false;
         if (name && user.name !== name) { user.name = name; updated = true; }
         if (picture && user.avatar !== picture) { user.avatar = picture; updated = true; }
         if (google_id && !user.google_id) { user.google_id = google_id; updated = true; }
+        if (requestedRole === 'PRINTER' && workshop_name && !user.workshop_name) {
+          user.workshop_name = workshop_name;
+          updated = true;
+        }
         if (updated) await user.save();
       }
 
@@ -78,7 +81,8 @@ class AuthController {
           email: user.email,
           name: user.name,
           avatar: user.avatar,
-          role: user.role
+          role: user.role,
+          workshop_name: user.workshop_name
         }
       });
     } catch (err) {
@@ -90,23 +94,30 @@ class AuthController {
   static async devLogin(req, res) {
     try {
       const { role } = req.body;
-      if (!['ADMIN', 'OPERATOR'].includes(role)) {
-        return res.status(400).json({ error: 'Role không hợp lệ. Chỉ chấp nhận ADMIN hoặc OPERATOR.' });
-      }
+      const effectiveRole = (role === 'SELLER') ? 'SELLER' : 'PRINTER';
 
-      const email = role === 'ADMIN' ? 'admin@vietcraft.print' : 'operator@vietcraft.print';
-      const name = role === 'ADMIN' ? 'Admin Test' : 'Operator Test';
+      let email = 'printer@vietcraft.print';
+      let name = 'Chủ Xưởng In VietCraft Direct';
+      let workshop_name = 'Xưởng In VietCraft Direct Hub';
+
+      if (effectiveRole === 'SELLER') {
+        email = 'seller@vietcraft.vn';
+        name = 'Seller Đối Tác POD Demo';
+        workshop_name = '';
+      }
       
       let user = await User.findOne({ email });
       if (!user) {
         user = await User.create({
           email,
           name,
-          role,
+          role: effectiveRole,
+          workshop_name,
+          password: 'password123',
           avatar: '',
           google_id: 'dev_mock_id'
         });
-        console.log(`[DEV LOGIN] Registered new mock account: ${email} (${role})`);
+        console.log(`[DEV LOGIN] Registered new mock account: ${email} (${effectiveRole})`);
       }
 
       // Sign local JWT token
@@ -123,7 +134,8 @@ class AuthController {
           email: user.email,
           name: user.name,
           avatar: user.avatar,
-          role: user.role
+          role: user.role,
+          workshop_name: user.workshop_name
         }
       });
     } catch (err) {
@@ -135,7 +147,7 @@ class AuthController {
   // Standard Email/Password Register
   static async register(req, res) {
     try {
-      const { name, email, password, role } = req.body;
+      const { name, email, password, role, workshop_name, phone, address } = req.body;
       if (!name || !email || !password) {
         return res.status(400).json({ error: 'Vui lòng điền đầy đủ họ tên, email và mật khẩu.' });
       }
@@ -145,12 +157,15 @@ class AuthController {
         return res.status(400).json({ error: 'Địa chỉ email này đã được đăng ký.' });
       }
 
-      const userRole = ['ADMIN', 'OPERATOR'].includes(role) ? role : 'OPERATOR';
+      const userRole = (role === 'SELLER') ? 'SELLER' : 'PRINTER';
       const user = await User.create({
         name,
         email: email.toLowerCase().trim(),
         password,
-        role: userRole
+        role: userRole,
+        workshop_name: userRole === 'PRINTER' ? (workshop_name || `${name} Printing Workshop`) : undefined,
+        phone,
+        address
       });
 
       const token = jwt.sign(
@@ -166,7 +181,8 @@ class AuthController {
           email: user.email,
           name: user.name,
           avatar: user.avatar || '',
-          role: user.role
+          role: user.role,
+          workshop_name: user.workshop_name
         }
       });
     } catch (err) {
@@ -205,7 +221,8 @@ class AuthController {
           email: user.email,
           name: user.name,
           avatar: user.avatar || '',
-          role: user.role
+          role: user.role,
+          workshop_name: user.workshop_name
         }
       });
     } catch (err) {
@@ -224,8 +241,72 @@ class AuthController {
       email: req.user.email,
       name: req.user.name,
       avatar: req.user.avatar,
-      role: req.user.role
+      role: req.user.role,
+      workshop_name: req.user.workshop_name,
+      phone: req.user.phone,
+      address: req.user.address,
+      description: req.user.description
     });
+  }
+
+  // Update workshop / user profile
+  static async updateProfile(req, res) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập.' });
+      }
+
+      const { name, workshop_name, phone, address, description, role } = req.body;
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+      }
+
+      if (name) user.name = name.trim();
+      if (workshop_name !== undefined) user.workshop_name = workshop_name.trim();
+      if (phone !== undefined) user.phone = phone.trim();
+      if (address !== undefined) user.address = address.trim();
+      if (description !== undefined) user.description = description.trim();
+      if (role && ['PRINTER', 'SELLER'].includes(role)) {
+        user.role = role;
+      }
+
+      await user.save();
+
+      // Đồng bộ tên xưởng sang các phôi và quan hệ đối tác đã tạo
+      if (user.role === 'PRINTER' && user.workshop_name) {
+        const Blank = require('../models/blank.model');
+        const Partnership = require('../models/partnership.model');
+        await Blank.updateMany(
+          { printer_id: user._id.toString() },
+          { $set: { printer_name: user.workshop_name } }
+        );
+        await Partnership.updateMany(
+          { printer_id: user._id },
+          { $set: { printer_name: user.workshop_name } }
+        );
+      }
+
+      console.log(`[PROFILE UPDATE] User ${user.email} updated profile. Workshop: ${user.workshop_name}, Role: ${user.role}`);
+
+      res.json({
+        message: 'Cập nhật thông tin thành công.',
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar,
+          role: user.role,
+          workshop_name: user.workshop_name,
+          phone: user.phone,
+          address: user.address,
+          description: user.description
+        }
+      });
+    } catch (err) {
+      console.error('[PROFILE UPDATE ERROR]', err);
+      res.status(500).json({ error: 'Lỗi cập nhật thông tin: ' + err.message });
+    }
   }
 }
 

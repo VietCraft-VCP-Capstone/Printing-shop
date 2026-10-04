@@ -20,14 +20,14 @@ router.post('/', OrderController.receiveOrder);
 router.post('/refund-requests', verifyVietCraftRefundKey, OrderController.receiveRefundRequest);
 
 // Printer decisions for VietCraft POD refund requests use the existing Printing portal.
-router.get('/refund-requests', authenticate, requireRole(['ADMIN', 'OPERATOR']), OrderController.getRefundRequests);
-router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['ADMIN', 'OPERATOR']), OrderController.respondToRefundRequest);
+router.get('/refund-requests', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), OrderController.getRefundRequests);
+router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), OrderController.respondToRefundRequest);
 
 // Protect other endpoints
 router.get('/', authenticate, OrderController.getAllOrders);
-router.put('/:id/status', authenticate, OrderController.updateStatus);
+router.put('/:id/status', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), OrderController.updateStatus);
 
-// Only ADMIN can perform shipping delegation
-router.post('/:id/ship', authenticate, requireRole(['ADMIN']), OrderController.shipOrder);
+// PRINTER and ADMIN can perform shipping delegation
+router.post('/:id/ship', authenticate, requireRole(['PRINTER', 'ADMIN']), OrderController.shipOrder);
 
 module.exports = router;

@@ -43,7 +43,28 @@ function requireRole(allowedRoles) {
   };
 }
 
+// Middleware for optional authentication (extracts user if token present)
+async function optionalAuthenticate(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded = jwt.verify(token, jwtSecret);
+    const user = await User.findById(decoded.id);
+    if (user) {
+      req.user = user;
+    }
+  } catch (err) {
+    // Ignore invalid optional token
+  }
+  next();
+}
+
 module.exports = {
   authenticate,
+  optionalAuthenticate,
   requireRole
 };

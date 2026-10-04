@@ -13,9 +13,13 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String },
   role: { 
     type: String, 
-    enum: ['ADMIN', 'OPERATOR'], 
-    default: 'OPERATOR' 
+    enum: ['PRINTER', 'SELLER', 'ADMIN', 'OPERATOR'], 
+    default: 'PRINTER' 
   },
+  workshop_name: { type: String },
+  phone: { type: String },
+  address: { type: String },
+  description: { type: String },
   google_id: { type: String }
 }, { timestamps: true });
 

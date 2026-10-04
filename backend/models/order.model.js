@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const PrintOrderSchema = new mongoose.Schema({
   vietcraft_order_id: { type: String, required: true },
   order_code: { type: String, required: true, unique: true },
+  printer_id: { type: String, index: true },
+  printer_name: { type: String },
   shop_name: { type: String },
   seller_id: { type: String },
   buyer_name: { type: String, required: true },
