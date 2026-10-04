@@ -1,4 +1,4 @@
-import { Database, LogOut, ShieldCheck, UserCog } from 'lucide-react';
+import { Database, LogOut, ShieldCheck } from 'lucide-react';
 import type { TabType } from './Sidebar';
 
 interface HeaderProps {
@@ -11,6 +11,10 @@ const TAB_METADATA: Record<TabType, { title: string; subtitle: string }> = {
   dashboard: { 
     title: 'Tổng quan hệ thống', 
     subtitle: 'Theo dõi tiến độ in ấn & hiệu suất xưởng thời gian thực' 
+  },
+  partnerships: { 
+    title: 'Hợp tác xưởng in & API Key', 
+    subtitle: 'Gửi yêu cầu thỏa thuận xưởng in, nhận API Key & kết nối tự động với sàn VietCraft' 
   },
   orders: { 
     title: 'Quản lý đơn in ấn', 
@@ -35,7 +39,7 @@ const TAB_METADATA: Record<TabType, { title: string; subtitle: string }> = {
 };
 
 export default function Header({ activeTab, user, onLogout }: HeaderProps) {
-  const isAdmin = user?.role === 'ADMIN';
+  const isPrinter = user?.role === 'PRINTER' || user?.role === 'ADMIN' || user?.role === 'OPERATOR';
   const meta = TAB_METADATA[activeTab] || { 
     title: 'Bảng điều khiển', 
     subtitle: 'Hệ thống xưởng in đối tác VietCraft' 
@@ -87,13 +91,13 @@ export default function Header({ activeTab, user, onLogout }: HeaderProps) {
                 {user.name}
               </span>
               <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 leading-tight">
-                {isAdmin ? (
+                {isPrinter ? (
                   <>
-                    <ShieldCheck className="w-2.5 h-2.5 text-violet-600" /> Admin
+                    <ShieldCheck className="w-2.5 h-2.5 text-violet-600" /> Xưởng In
                   </>
                 ) : (
                   <>
-                    <UserCog className="w-2.5 h-2.5 text-slate-500" /> Operator
+                    <span className="text-emerald-600 font-bold">🏪</span> Seller
                   </>
                 )}
               </span>

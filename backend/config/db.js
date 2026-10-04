@@ -47,20 +47,73 @@ async function seedUsersIfEmpty() {
       await admin.save();
     }
 
-    // Seed default Operator
-    let operator = await User.findOne({ email: 'operator@vietcraft.print' });
-    if (!operator) {
-      await User.create({
-        email: 'operator@vietcraft.print',
-        name: 'Kỹ Thuật Viên Vận Hành',
+    // Seed default Printer Workshop
+    let printer = await User.findOne({ email: 'printer@vietcraft.print' });
+    if (!printer) {
+      printer = await User.create({
+        email: 'printer@vietcraft.print',
+        name: 'Chủ Xưởng VietCraft Direct',
+        workshop_name: 'Xưởng In VietCraft Direct Hub',
         password: '123456',
-        role: 'OPERATOR',
-        avatar: ''
+        role: 'PRINTER',
+        phone: '0908889999',
+        address: 'Khu Công Nghệ Cao, TP. Thủ Đức, TP. HCM',
+        description: 'Xưởng in chính hãng VietCraft, công nghệ in Direct-to-Garment hiện đại.'
       });
-      console.log('Seeded default Operator: operator@vietcraft.print / 123456');
-    } else if (!operator.password) {
-      operator.password = '123456';
-      await operator.save();
+      console.log('Seeded default Printer: printer@vietcraft.print / 123456');
+    }
+
+    // Migrate any legacy roles to PRINTER
+    await User.updateMany(
+      { role: { $in: ['OPERATOR', 'POD_FACTORY', 'GARMENT_FACTORY', 'LOGISTICS'] } },
+      { $set: { role: 'PRINTER' } }
+    );
+
+    // Backfill legacy blanks and orders with default printer if not assigned
+    if (printer) {
+      const Blank = require('../models/blank.model');
+      await Blank.updateMany(
+        { $or: [{ printer_id: { $exists: false } }, { printer_id: null }] },
+        { $set: { printer_id: printer._id.toString(), printer_name: printer.workshop_name || printer.name } }
+      );
+      const PrintOrder = require('../models/order.model');
+      await PrintOrder.updateMany(
+        { $or: [{ printer_id: { $exists: false } }, { printer_id: null }] },
+        { $set: { printer_id: printer._id.toString(), printer_name: printer.workshop_name || printer.name } }
+      );
+    }
+
+    // Seed default Seller
+    let seller = await User.findOne({ email: 'seller@vietcraft.vn' });
+    if (!seller) {
+      seller = await User.create({
+        email: 'seller@vietcraft.vn',
+        name: 'Seller Đối Tác POD Demo',
+        password: '123456',
+        role: 'SELLER',
+        phone: '0901234567'
+      });
+      console.log('Seeded default Seller: seller@vietcraft.vn / 123456');
+    }
+
+    // Seed default Partnership
+    const Partnership = require('../models/partnership.model');
+    let demoPartnership = await Partnership.findOne({ seller_id: seller._id, printer_id: printer._id });
+    if (!demoPartnership) {
+      await Partnership.create({
+        printer_id: printer._id,
+        printer_name: printer.workshop_name || printer.name,
+        printer_api_url: process.env.PRINTER_PUBLIC_API_URL || 'http://localhost:8880',
+        seller_id: seller._id,
+        seller_name: seller.name,
+        seller_email: seller.email,
+        shop_name: 'VietCraft Custom T-Shirt Studio',
+        status: 'ACCEPTED',
+        api_key: 'psk_live_demo_vietcraft_2026',
+        notes: 'Thỏa thuận hợp tác sản xuất phôi POD mặc định cho đối tác VietCraft.',
+        accepted_at: new Date()
+      });
+      console.log('Seeded demo Partnership with API Key: psk_live_demo_vietcraft_2026');
     }
   } catch (err) {
     console.error('Seeding users error:', err);

@@ -153,82 +153,90 @@ export default function OrderRow({ order, onUpdateStatus, onOpenShipModal, userR
 
       {/* 6. Thao tác */}
       <td className="px-5 py-4 text-right align-middle">
-        {order.status === 'RECEIVED' && (
-          <div className="flex items-center justify-end gap-2">
-            <button 
-              onClick={handleReject}
-              className="border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1"
-              title="Báo lỗi nếu file hỏng hoặc hết phôi"
-            >
-              <AlertTriangle className="w-3 h-3" /> Báo lỗi
-            </button>
-            <button 
-              onClick={() => onUpdateStatus(order._id, order.status)}
-              className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
-            >
-              Duyệt in
-            </button>
+        {userRole === 'SELLER' ? (
+          <div className="text-right">
+            {order.status === 'RECEIVED' && <span className="text-xs text-amber-600 font-medium">Chờ xưởng tiếp nhận</span>}
+            {order.status === 'PRINTING' && <span className="text-xs text-violet-600 font-medium">Đang tiến hành in</span>}
+            {order.status === 'PACKAGED' && <span className="text-xs text-emerald-600 font-medium">Đã đóng gói hàng</span>}
+            {order.status === 'SHIPPED' && <span className="text-xs text-blue-600 font-medium">Đang chuyển phát</span>}
+            {order.status === 'DELIVERED' && <span className="text-xs text-emerald-700 font-medium">Giao thành công</span>}
+            {order.status === 'REJECTED' && <span className="text-xs text-rose-600 font-medium">Xưởng từ chối</span>}
           </div>
-        )}
+        ) : (
+          <>
+            {order.status === 'RECEIVED' && (
+              <div className="flex items-center justify-end gap-2">
+                <button 
+                  onClick={handleReject}
+                  className="border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer"
+                  title="Báo lỗi nếu file hỏng hoặc hết phôi"
+                >
+                  <AlertTriangle className="w-3 h-3" /> Báo lỗi
+                </button>
+                <button 
+                  onClick={() => onUpdateStatus(order._id, order.status)}
+                  className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  Duyệt in
+                </button>
+              </div>
+            )}
 
-        {order.status === 'PRINTING' && (
-          <div className="flex items-center justify-end gap-2">
-            <button 
-              onClick={handleReject}
-              className="border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1"
-              title="Báo sự cố in ấn"
-            >
-              <AlertTriangle className="w-3 h-3" /> Báo lỗi
-            </button>
-            <button 
-              onClick={() => onUpdateStatus(order._id, order.status)}
-              className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
-            >
-              Hoàn thành in
-            </button>
-          </div>
-        )}
+            {order.status === 'PRINTING' && (
+              <div className="flex items-center justify-end gap-2">
+                <button 
+                  onClick={handleReject}
+                  className="border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs px-2.5 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1 cursor-pointer"
+                  title="Báo sự cố in ấn"
+                >
+                  <AlertTriangle className="w-3 h-3" /> Báo lỗi
+                </button>
+                <button 
+                  onClick={() => onUpdateStatus(order._id, order.status)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1.5 rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
+                >
+                  Hoàn thành in
+                </button>
+              </div>
+            )}
 
-        {order.status === 'PACKAGED' && (
-          <button 
-            onClick={() => onOpenShipModal(order)}
-            disabled={userRole !== 'ADMIN'}
-            title={userRole !== 'ADMIN' ? 'Cần quyền Admin để giao hàng' : ''}
-            className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ml-auto shadow-xs ${
-              userRole === 'ADMIN' 
-                ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5" /> Giao hàng
-          </button>
-        )}
+            {order.status === 'PACKAGED' && (
+              <button 
+                onClick={() => onOpenShipModal(order)}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ml-auto shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                title="Ủy quyền giao hàng qua hãng vận chuyển"
+              >
+                <Truck className="w-3.5 h-3.5" /> Giao hàng
+              </button>
+            )}
 
-        {order.status === 'SHIPPED' && (
-          <div className="flex items-center justify-end gap-2">
-            <span className="text-blue-600 font-semibold text-xs flex items-center gap-1">
-              <Truck className="w-3.5 h-3.5 text-blue-600" /> Đang giao
-            </span>
-            <button
-              onClick={() => onUpdateStatus(order._id, order.status)}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
-              title="Xác nhận shipper đã phát hàng thành công"
-            >
-              Giao thành công
-            </button>
-          </div>
-        )}
+            {order.status === 'SHIPPED' && (
+              <div className="flex items-center justify-end gap-2">
+                <span className="text-blue-600 font-semibold text-xs flex items-center gap-1">
+                  <Truck className="w-3.5 h-3.5 text-blue-600" /> Đang giao
+                </span>
+                <button
+                  onClick={() => onUpdateStatus(order._id, order.status)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
+                  title="Xác nhận shipper đã phát hàng thành công"
+                >
+                  Giao thành công
+                </button>
+              </div>
+            )}
 
-        {order.status === 'DELIVERED' && (
-          <div className="text-emerald-700 font-semibold text-xs flex items-center justify-end gap-1">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Đã giao xong
-          </div>
-        )}
+            {order.status === 'DELIVERED' && (
+              <div className="text-emerald-700 font-semibold text-xs flex items-center justify-end gap-1">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Đã giao xong
+              </div>
+            )}
 
-        {order.status === 'REJECTED' && (
-          <span className="text-rose-500 text-xs font-medium">
-            Đã báo lỗi
-          </span>
+            {order.status === 'REJECTED' && (
+              <span className="text-rose-500 text-xs font-medium">
+                Đã báo lỗi
+              </span>
+            )}
+          </>
         )}
       </td>
     </tr>

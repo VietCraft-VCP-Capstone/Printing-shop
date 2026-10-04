@@ -197,35 +197,38 @@ export default function DashboardTab({
 
                     {/* Action buttons */}
                     <div className="flex items-center justify-end gap-2 flex-shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
-                      {o.status === 'RECEIVED' && (
-                        <button 
-                          onClick={() => onUpdateStatus(o._id, o.status)}
-                          className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
-                        >
-                          Duyệt in
-                        </button>
-                      )}
-                      {o.status === 'PRINTING' && (
-                        <button 
-                          onClick={() => onUpdateStatus(o._id, o.status)}
-                          className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs"
-                        >
-                          Hoàn thành in
-                        </button>
-                      )}
-                      {o.status === 'PACKAGED' && (
-                        <button 
-                          onClick={() => onOpenShipModal(o)}
-                          disabled={userRole !== 'ADMIN'}
-                          title={userRole !== 'ADMIN' ? 'Cần quyền Admin để ủy quyền giao hàng' : ''}
-                          className={`text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 shadow-xs ${
-                            userRole === 'ADMIN' 
-                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                          }`}
-                        >
-                          <Truck className="w-3.5 h-3.5" /> Giao hàng
-                        </button>
+                      {userRole === 'SELLER' ? (
+                        <span className="text-xs text-slate-500 font-medium italic">
+                          Xưởng đang xử lý
+                        </span>
+                      ) : (
+                        <>
+                          {o.status === 'RECEIVED' && (
+                            <button 
+                              onClick={() => onUpdateStatus(o._id, o.status)}
+                              className="bg-violet-600 hover:bg-violet-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
+                            >
+                              Duyệt in
+                            </button>
+                          )}
+                          {o.status === 'PRINTING' && (
+                            <button 
+                              onClick={() => onUpdateStatus(o._id, o.status)}
+                              className="bg-amber-600 hover:bg-amber-700 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all shadow-xs cursor-pointer"
+                            >
+                              Hoàn thành in
+                            </button>
+                          )}
+                          {o.status === 'PACKAGED' && (
+                            <button 
+                              onClick={() => onOpenShipModal(o)}
+                              className="text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+                              title="Ủy quyền giao hàng qua hãng vận chuyển"
+                            >
+                              <Truck className="w-3.5 h-3.5" /> Giao hàng
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>

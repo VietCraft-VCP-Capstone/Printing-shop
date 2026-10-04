@@ -8,22 +8,32 @@ import RefundsTab from './features/orders/RefundsTab';
 import LogisticsTab from './features/logistics/LogisticsTab';
 import CatalogTab from './features/catalog/CatalogTab';
 import SettingsTab from './features/settings/SettingsTab';
+import PartnershipsTab from './features/partnerships/PartnershipsTab';
 import ShippingModal from './features/orders/components/ShippingModal';
 import LoginPage from './features/auth/LoginPage';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
-  const [orders, setOrders] = useState<any[]>([]);
-  const [blanks, setBlanks] = useState<any[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
-  const [loadingBlanks, setLoadingBlanks] = useState(true);
-  const [shippingModalOrder, setShippingModalOrder] = useState<any | null>(null);
-
   // Authentication State
   const [user, setUser] = useState<any>(() => {
     const savedUser = localStorage.getItem('printing_auth_user');
     return savedUser ? JSON.parse(savedUser) : null;
   });
+
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    try {
+      const savedUser = localStorage.getItem('printing_auth_user');
+      if (savedUser && JSON.parse(savedUser).role === 'SELLER') {
+        return 'partnerships';
+      }
+    } catch {}
+    return 'dashboard';
+  });
+
+  const [orders, setOrders] = useState<any[]>([]);
+  const [blanks, setBlanks] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [loadingBlanks, setLoadingBlanks] = useState(true);
+  const [shippingModalOrder, setShippingModalOrder] = useState<any | null>(null);
 
   // Fetch functions (only run if logged in)
   const fetchOrders = async () => {
@@ -43,8 +53,9 @@ export default function App() {
     if (!user) return;
     setLoadingBlanks(true);
     try {
-      // Admin thấy cả phôi đã tắt (?all=1) để quản lý; role khác chỉ thấy active.
-      const res = await api.get(user.role === 'ADMIN' ? '/api/blanks?all=1' : '/api/blanks');
+      // Chủ xưởng in (PRINTER) và Admin thấy cả phôi đã tắt (?all=1) để quản lý
+      const isWorkshopOwner = user.role === 'PRINTER' || user.role === 'ADMIN';
+      const res = await api.get(isWorkshopOwner ? '/api/blanks?all=1' : '/api/blanks');
       setBlanks(res.data);
     } catch (err) {
       console.error('Error fetching blanks:', err);
@@ -55,6 +66,9 @@ export default function App() {
 
   useEffect(() => {
     if (user) {
+      if (user.role === 'SELLER') {
+        setActiveTab('partnerships');
+      }
       fetchOrders();
       fetchBlanks();
       // Poll for changes every 10 seconds
@@ -67,6 +81,11 @@ export default function App() {
     localStorage.setItem('printing_auth_token', token);
     localStorage.setItem('printing_auth_user', JSON.stringify(userData));
     setUser(userData);
+    if (userData.role === 'SELLER') {
+      setActiveTab('partnerships');
+    } else {
+      setActiveTab('dashboard');
+    }
   };
 
   const handleLogout = () => {
@@ -200,8 +219,18 @@ export default function App() {
             />
           )}
 
+          {activeTab === 'partnerships' && (
+            <PartnershipsTab user={user} />
+          )}
+
           {activeTab === 'settings' && (
-            <SettingsTab user={user} />
+            <SettingsTab 
+              user={user} 
+              onUserUpdated={(updatedUser) => {
+                setUser(updatedUser);
+                localStorage.setItem('ps_user', JSON.stringify(updatedUser));
+              }}
+            />
           )}
         </div>
       </main>
