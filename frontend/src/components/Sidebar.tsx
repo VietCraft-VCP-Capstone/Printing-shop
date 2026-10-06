@@ -22,7 +22,7 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
   }> = [
     { tab: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
     { tab: 'orders', icon: Printer, label: 'Đơn in ấn', badgeCount: pendingJobsCount },
-    { tab: 'refunds', icon: ClipboardList, label: 'Yêu cầu Refund POD' },
+    { tab: 'refunds', icon: ClipboardList, label: 'Đổi trả & Hoàn tiền POD' },
     { tab: 'logistics', icon: Truck, label: 'Vận chuyển' },
     { tab: 'catalog', icon: Layers, label: 'Kho phôi POD', adminOnly: !isAdmin },
     { tab: 'settings', icon: SettingsIcon, label: 'Cấu hình hệ thống' },
