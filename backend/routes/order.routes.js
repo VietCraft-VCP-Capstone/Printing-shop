@@ -20,8 +20,8 @@ router.post('/', OrderController.receiveOrder);
 router.post('/refund-requests', verifyVietCraftRefundKey, OrderController.receiveRefundRequest);
 
 // Printer decisions for VietCraft POD refund requests use the existing Printing portal.
-router.get('/refund-requests', authenticate, requireRole(['ADMIN', 'OPERATOR']), OrderController.getRefundRequests);
-router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['ADMIN', 'OPERATOR']), OrderController.respondToRefundRequest);
+router.get('/refund-requests', authenticate, requireRole(['ADMIN', 'OPERATOR', 'PRINTER']), OrderController.getRefundRequests);
+router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['ADMIN', 'OPERATOR', 'PRINTER']), OrderController.respondToRefundRequest);
 
 // Protect other endpoints
 router.get('/', authenticate, OrderController.getAllOrders);
