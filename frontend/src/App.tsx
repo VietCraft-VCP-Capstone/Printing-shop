@@ -4,13 +4,13 @@ import Sidebar, { type TabType } from './components/Sidebar';
 import Header from './components/Header';
 import DashboardTab from './features/dashboard/DashboardTab';
 import OrdersTab from './features/orders/OrdersTab';
-import RefundsTab from './features/orders/RefundsTab';
 import LogisticsTab from './features/logistics/LogisticsTab';
 import CatalogTab from './features/catalog/CatalogTab';
 import SettingsTab from './features/settings/SettingsTab';
 import PartnershipsTab from './features/partnerships/PartnershipsTab';
 import ShippingModal from './features/orders/components/ShippingModal';
 import LoginPage from './features/auth/LoginPage';
+import RefundsTab from './features/refunds/RefundsTab';
 
 export default function App() {
   // Authentication State
@@ -200,7 +200,6 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'refunds' && <RefundsTab />}
 
           {activeTab === 'logistics' && (
             <LogisticsTab
@@ -232,6 +231,7 @@ export default function App() {
               }}
             />
           )}
+          {activeTab === 'refunds' && <RefundsTab userRole={user.role} />}
         </div>
       </main>
 
@@ -246,4 +246,3 @@ export default function App() {
     </div>
   );
 }
-

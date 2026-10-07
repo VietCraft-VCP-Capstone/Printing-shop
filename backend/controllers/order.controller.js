@@ -1,6 +1,5 @@
 const PrintOrder = require('../models/order.model');
 const WebhookService = require('../services/webhook.service');
-const RefundProxyService = require('../services/refund-proxy.service');
 
 class OrderController {
   static async getAllOrders(req, res) {
@@ -126,47 +125,6 @@ class OrderController {
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
-  }
-
-  static async receiveRefundRequest(req, res) {
-    try {
-      const { refund_request_id, order_code } = req.body || {};
-      if (!refund_request_id || !order_code) return res.status(400).json({ error: 'Thiếu refund_request_id hoặc order_code.' });
-      const order = await PrintOrder.findOne({ order_code }).select('_id order_code').lean();
-      if (!order && !String(order_code).startsWith('TEST-REFUND')) return res.status(404).json({ error: 'Đơn in không tồn tại tại Printing Shop.' });
-      return res.status(202).json({ accepted: true, printing_order_id: order?._id || 'MOCK_TEST_ORDER', refund_request_id });
-    } catch (err) { return res.status(500).json({ error: err.message }); }
-  }
-
-  static async getRefundRequests(req, res) {
-    try {
-      const allRefunds = await RefundProxyService.list();
-      if (req.user && req.user.role === 'PRINTER') {
-        const pId = req.user._id.toString();
-        const myOrders = await PrintOrder.find({
-          $or: [
-            { printer_id: pId },
-            ...(req.user.email === 'printer@vietcraft.print' ? [{ printer_id: { $exists: false } }, { printer_id: null }] : [])
-          ]
-        }).select('order_code').lean();
-        const myCodes = new Set(myOrders.map(o => o.order_code));
-        const filtered = allRefunds.filter(r => myCodes.has(r.order_code) || r.order_code.startsWith('TEST-REFUND'));
-        return res.json(filtered);
-      }
-      res.json(allRefunds);
-    } catch (err) {
-      res.status(502).json({ error: err.message });
-    }
-  }
-
-  static async respondToRefundRequest(req, res) {
-    try {
-      const { decision, note } = req.body;
-      if (!['APPROVE', 'REJECT'].includes(decision) || !note?.trim()) {
-        return res.status(400).json({ error: 'Cần chọn quyết định và ghi chú phản hồi.' });
-      }
-      res.json(await RefundProxyService.respond(req.params.requestId, decision, note.trim()));
-    } catch (err) { res.status(502).json({ error: err.message }); }
   }
 
   static async shipOrder(req, res) {

@@ -129,6 +129,8 @@ MONGO_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/printing?appName
 VIETCRAFT_BE_URL=http://localhost:8080
 GOOGLE_CLIENT_ID=<your-google-client-id>.apps.googleusercontent.com
 JWT_SECRET=<your-secret-key-min-32-chars>
+PRINTER_REFUND_API_KEY=<shared-refund-secret>
+PRINTER_REFUND_PRINTER_ID=<assigned-workshop-id>
 ```
 
 #### `frontend/.env`
@@ -223,6 +225,9 @@ Endpoint: `POST /api/auth/dev-login` nhận `{ "role": "ADMIN" | "OPERATOR" }`.
 | `GET` | `/api/orders` | Lấy danh sách tất cả đơn hàng | JWT |
 | `PUT` | `/api/orders/:id/status` | Cập nhật trạng thái đơn hàng | JWT |
 | `POST` | `/api/orders/:id/ship` | Ủy quyền giao vận | JWT + **ADMIN** |
+| `POST` | `/api/orders/refund-requests` | Nhận yêu cầu hoàn tiền, chống gửi trùng | Shared partner key + printer ID |
+| `GET` | `/api/orders/refund-requests` | Danh sách yêu cầu legacy và V3 được giao cho xưởng | JWT |
+| `POST` | `/api/orders/refund-requests/:id/respond` | Chấp thuận/từ chối và gửi callback về VietCraft | JWT + **ADMIN** |
 
 ### Blanks (Phôi)
 
@@ -300,6 +305,14 @@ Endpoint: `POST /api/auth/dev-login` nhận `{ "role": "ADMIN" | "OPERATOR" }`.
 ---
 
 ## 🔗 Tích hợp với VietCraft Marketplace
+
+### Đổi hàng và hoàn tiền
+
+Cấu hình cùng `PRINTER_REFUND_API_KEY` và `PRINTER_REFUND_PRINTER_ID` trên VietCraft BE và Printing-shop backend. Printer ID phải trùng `printer_info.printer_id` / `printer_partner.printer_id` của các đơn được giao cho xưởng; đây là danh tính của xưởng, không phải tài khoản người dùng VietCraft. BE gửi legacy request tới `POST /api/orders/refund-requests`; cả hai chiều sử dụng header `x-vietcraft-refund-key` và `x-printer-id`. Không đưa shared key vào frontend.
+
+Tab **Đổi hàng & hoàn tiền** lấy hàng chờ từ `GET {VIETCRAFT_BE_URL}/api/printer/refund-requests`, bao gồm yêu cầu V3. Admin xưởng quyết định và backend gọi `POST /api/printer/refund-requests/:id/respond`. Quyết định được lưu trước khi gọi callback; nếu mất kết nối, dùng **Gửi lại quyết định** để gửi đúng quyết định đã lưu. Resend giữ nguyên business key và không tạo quyết định mới. Chấp thuận từ xưởng chuyển yêu cầu hoàn tiền V3 tới Admin VietCraft; trạng thái thanh toán chỉ được xác nhận khi thực thi hoàn tiền thành công.
+
+Công cụ mock development của VietCraft dùng đường dẫn riêng `/api/printer/mock/refund-requests` và `/:id/respond`, header `x-refund-printer-secret` lấy từ `REFUND_PRINTER_MOCK_SECRET`. Các đường dẫn mock bị tắt trong production; đường dẫn partner hoạt động ở production khi đã cấu hình shared key và printer ID.
 
 ### Nhận đơn hàng (Inbound Webhook)
 

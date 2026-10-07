@@ -1,27 +1,18 @@
 const express = require('express');
-const crypto = require('crypto');
 const OrderController = require('../controllers/order.controller');
 const { authenticate, requireRole } = require('../middleware/auth.middleware');
+const { verifyRefundPartner } = require('../middleware/refund-partner.middleware');
+const { createRefundController } = require('../controllers/refund-request.controller');
 
 const router = express.Router();
+const refunds = createRefundController();
 
-function verifyVietCraftRefundKey(req, res, next) {
-  const expected = process.env.VIETCRAFT_REFUND_API_KEY || '';
-  const supplied = String(req.headers['x-vietcraft-refund-key'] || '');
-  const a = Buffer.from(expected); const b = Buffer.from(supplied);
-  if (!expected || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-    return res.status(401).json({ error: 'Unauthorized VietCraft refund dispatch.' });
-  }
-  next();
-}
+router.post('/refund-requests', verifyRefundPartner, refunds.receive);
+router.get('/refund-requests', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), refunds.list);
+router.post('/refund-requests/:id/respond', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), refunds.respond);
 
 // Order dispatch from partner (VietCraft BE) remains public
 router.post('/', OrderController.receiveOrder);
-router.post('/refund-requests', verifyVietCraftRefundKey, OrderController.receiveRefundRequest);
-
-// Printer decisions for VietCraft POD refund requests use the existing Printing portal.
-router.get('/refund-requests', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), OrderController.getRefundRequests);
-router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), OrderController.respondToRefundRequest);
 
 // Protect other endpoints
 router.get('/', authenticate, OrderController.getAllOrders);

@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const vietcraftBE = process.env.VIETCRAFT_BE_URL || 'http://localhost:8080';
-const webhookSecret = process.env.PRINTER_WEBHOOK_SECRET || process.env.VIETCRAFT_WEBHOOK_SECRET || 'vietcraft_hmac_webhook_secret_key_2026';
+const webhookSecret = process.env.PRINTER_WEBHOOK_SECRET || process.env.PRINTING_WEBHOOK_SECRET || process.env.VIETCRAFT_WEBHOOK_SECRET || '';
+if (!webhookSecret) console.warn('[WEBHOOK] Chưa cấu hình PRINTING_WEBHOOK_SECRET; webhook gửi về VietCraft sẽ bị từ chối.');
 
 // Lazy loader for node-fetch@2 (which is CommonJS compatible, or we can use dynamic import for ESM node-fetch)
 const getFetch = async () => {
