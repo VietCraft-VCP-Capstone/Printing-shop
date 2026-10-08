@@ -21,8 +21,8 @@ const TAB_METADATA: Record<TabType, { title: string; subtitle: string }> = {
     subtitle: 'Tiếp nhận file thiết kế, duyệt in và đóng gói sản phẩm' 
   },
   refunds: { 
-    title: 'Refund POD · Printer', 
-    subtitle: 'Phản hồi yêu cầu Refund được Seller chuyển từ VietCraft' 
+    title: 'Đổi trả & Hoàn tiền POD',
+    subtitle: 'Xem xét và thẩm định yêu cầu đổi hàng / hoàn tiền từ VietCraft'
   },
   logistics: { 
     title: 'Vận chuyển & Giao vận', 
