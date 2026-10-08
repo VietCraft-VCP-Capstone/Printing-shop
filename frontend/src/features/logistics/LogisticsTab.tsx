@@ -98,10 +98,10 @@ export default function LogisticsTab({ orders, userRole, onOpenShipModal }: Logi
                 </div>
                 <button
                   onClick={() => onOpenShipModal(order)}
-                  disabled={userRole !== 'ADMIN'}
+                  disabled={userRole !== 'ADMIN' && userRole !== 'PRINTER'}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 flex-shrink-0 transition-all ${
-                    userRole === 'ADMIN' 
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs' 
+                    userRole === 'ADMIN' || userRole === 'PRINTER'
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer' 
                       : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                   }`}
                 >

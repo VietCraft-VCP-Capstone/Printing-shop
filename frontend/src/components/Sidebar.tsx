@@ -1,6 +1,6 @@
-import { Printer, LayoutDashboard, Layers, RefreshCw, ShieldCheck, UserCog, Lock, Truck, Settings as SettingsIcon, ClipboardList } from 'lucide-react';
+import { Printer, LayoutDashboard, Layers, RefreshCw, Lock, Truck, Settings as SettingsIcon, ClipboardList, Handshake, Store } from 'lucide-react';
 
-export type TabType = 'dashboard' | 'orders' | 'refunds' | 'logistics' | 'catalog' | 'settings';
+export type TabType = 'dashboard' | 'orders' | 'refunds' | 'logistics' | 'catalog' | 'partnerships' | 'settings';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -11,7 +11,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onRefresh, userRole }: SidebarProps) {
-  const isAdmin = userRole === 'ADMIN';
+  const isPrinter = userRole === 'PRINTER' || userRole === 'ADMIN' || userRole === 'OPERATOR';
+  const isSeller = userRole === 'SELLER';
 
   const navItems: Array<{
     tab: TabType;
@@ -19,12 +20,15 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
     label: string;
     badgeCount?: number;
     adminOnly?: boolean;
-  }> = [
+  }> = isSeller ? [
+    { tab: 'partnerships', icon: Handshake, label: 'Hợp tác xưởng in' }
+  ] : [
     { tab: 'dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
+    { tab: 'partnerships', icon: Handshake, label: 'Thỏa thuận đối tác' },
     { tab: 'orders', icon: Printer, label: 'Đơn in ấn', badgeCount: pendingJobsCount },
     { tab: 'refunds', icon: ClipboardList, label: 'Đổi trả & Hoàn tiền POD' },
     { tab: 'logistics', icon: Truck, label: 'Vận chuyển' },
-    { tab: 'catalog', icon: Layers, label: 'Kho phôi POD', adminOnly: !isAdmin },
+    { tab: 'catalog', icon: Layers, label: 'Kho phôi POD' },
     { tab: 'settings', icon: SettingsIcon, label: 'Cấu hình hệ thống' },
   ];
 
@@ -40,7 +44,7 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
             Printing Shop
           </h1>
           <p className="text-[11px] text-violet-600 font-medium tracking-tight truncate">
-            Đối tác in VietCraft
+            {isSeller ? 'Đối tác Người Bán POD' : 'Hệ sinh thái Xưởng in'}
           </p>
         </div>
       </div>
@@ -48,18 +52,18 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
       {/* Role Profile Indicator */}
       <div className="px-4 py-3 mx-3 my-2.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center gap-2.5">
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-          isAdmin ? 'bg-violet-100 text-violet-700' : 'bg-slate-200 text-slate-700'
+          isPrinter ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'
         }`}>
-          {isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserCog className="w-4 h-4" />}
+          {isPrinter ? <Printer className="w-4 h-4" /> : <Store className="w-4 h-4" />}
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold text-slate-800 leading-tight truncate">
-            {isAdmin ? 'Quản trị viên' : 'Kỹ thuật viên in'}
+            {isPrinter ? 'Chủ Xưởng In' : 'Người Bán (Seller)'}
           </p>
           <span className={`inline-block text-[10px] font-medium leading-tight ${
-            isAdmin ? 'text-violet-600' : 'text-slate-500'
+            isPrinter ? 'text-violet-600' : 'text-emerald-600'
           }`}>
-            {isAdmin ? 'Quyền Admin toàn phần' : 'Vận hành & đóng gói'}
+            {isPrinter ? 'Toàn quyền xưởng & Giao vận' : 'Thỏa thuận phôi & Đặt in'}
           </span>
         </div>
       </div>
@@ -106,6 +110,21 @@ export default function Sidebar({ activeTab, setActiveTab, pendingJobsCount, onR
           );
         })}
       </nav>
+
+      {isSeller && (
+        <div className="p-3 mx-3 mb-3 rounded-xl bg-violet-50 border border-violet-100 text-xs">
+          <span className="font-bold text-violet-900 block mb-1">🏪 Kênh Bán Hàng</span>
+          <p className="text-[11px] text-violet-700 mb-2 leading-relaxed">
+            Sau khi xưởng duyệt cấp API Key, hãy quay lại VietCraft để kết nối và tạo sản phẩm POD.
+          </p>
+          <a
+            href="http://localhost:5173/seller/settings?tab=printer"
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-violet-700 hover:text-violet-900 underline"
+          >
+            Mở VietCraft Seller Center &rarr;
+          </a>
+        </div>
+      )}
 
       {/* System Status Footer */}
       <div className="p-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">

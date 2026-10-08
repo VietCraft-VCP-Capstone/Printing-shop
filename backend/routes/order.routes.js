@@ -25,9 +25,9 @@ router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['A
 
 // Protect other endpoints
 router.get('/', authenticate, OrderController.getAllOrders);
-router.put('/:id/status', authenticate, OrderController.updateStatus);
+router.put('/:id/status', authenticate, requireRole(['PRINTER', 'ADMIN', 'OPERATOR']), OrderController.updateStatus);
 
-// Only ADMIN can perform shipping delegation
-router.post('/:id/ship', authenticate, requireRole(['ADMIN']), OrderController.shipOrder);
+// PRINTER and ADMIN can perform shipping delegation
+router.post('/:id/ship', authenticate, requireRole(['PRINTER', 'ADMIN']), OrderController.shipOrder);
 
 module.exports = router;
