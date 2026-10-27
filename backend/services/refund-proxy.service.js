@@ -23,12 +23,12 @@ class RefundProxyService {
     return body;
   }
 
-  static async respond(requestId, decision, note) {
+  static async respond(requestId, decision, note, evidence = []) {
     const fetch = await getFetch();
     const response = await fetch(`${vietcraftBE}/api/printer/refund-requests/${encodeURIComponent(requestId)}/respond`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-      body: JSON.stringify({ decision, note })
+      body: JSON.stringify({ decision, note, evidence })
     });
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || `VietCraft API returned ${response.status}`);

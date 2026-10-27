@@ -1,6 +1,7 @@
 const PrintOrder = require('../models/order.model');
 const WebhookService = require('../services/webhook.service');
 const RefundProxyService = require('../services/refund-proxy.service');
+const { uploadToCloudinary, isCloudinaryEnabled } = require('../services/cloudinary.service');
 
 class OrderController {
   static async getAllOrders(req, res) {
@@ -170,13 +171,42 @@ class OrderController {
     }
   }
 
+  static async uploadRefundEvidence(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Hãy chọn một tệp hình ảnh hoặc video minh chứng.' });
+      }
+      if (isCloudinaryEnabled()) {
+        try {
+          const cloudResult = await uploadToCloudinary(req.file.path, 'vietcraft/printing-shop/refunds');
+          return res.status(201).json({
+            url: cloudResult.url,
+            storage: 'cloudinary'
+          });
+        } catch (cloudErr) {
+          console.warn('[Cloudinary Warning] Lỗi upload Cloudinary minh chứng, chuyển fallback local:', cloudErr.message);
+        }
+      }
+      const fileUrl = `/uploads/blanks/${req.file.filename}`;
+      return res.status(201).json({
+        url: fileUrl,
+        storage: 'local'
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   static async respondToRefundRequest(req, res) {
     try {
-      const { decision, note } = req.body;
+      const { decision, note, evidence } = req.body;
       if (!['APPROVE', 'REJECT'].includes(decision) || !note?.trim()) {
         return res.status(400).json({ error: 'Cần chọn quyết định và ghi chú phản hồi.' });
       }
-      res.json(await RefundProxyService.respond(req.params.requestId, decision, note.trim()));
+      if (decision === 'REJECT' && (!Array.isArray(evidence) || evidence.length === 0)) {
+        return res.status(400).json({ error: 'Khi từ chối yêu cầu, xưởng in bắt buộc phải cung cấp ít nhất 1 hình ảnh hoặc video minh chứng đối chiếu.' });
+      }
+      res.json(await RefundProxyService.respond(req.params.requestId, decision, note.trim(), evidence || []));
     } catch (err) { res.status(502).json({ error: err.message }); }
   }
 

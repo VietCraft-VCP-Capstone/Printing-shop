@@ -32,7 +32,7 @@ async function uploadToCloudinary(filePath, folder = 'vietcraft/printing-shop/bl
 
   const result = await cloudinary.uploader.upload(filePath, {
     folder,
-    resource_type: 'image',
+    resource_type: 'auto',
     use_filename: true,
     unique_filename: true,
     overwrite: false
