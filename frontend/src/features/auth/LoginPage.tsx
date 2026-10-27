@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { Printer, ShieldAlert, Loader2, KeyRound, Mail, LogIn, UserPlus, User } from 'lucide-react';
 
@@ -16,17 +16,43 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [workshopName, setWorkshopName] = useState('');
+  const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState<'ADMIN' | 'OPERATOR'>('OPERATOR');
+  const [role, setRole] = useState<'SELLER' | 'PRINTER'>('SELLER');
+
+  const roleRef = useRef(role);
+  const workshopNameRef = useRef(workshopName);
+  useEffect(() => {
+    roleRef.current = role;
+    workshopNameRef.current = workshopName;
+  }, [role, workshopName]);
 
   const handleCredentialResponse = async (response: any) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.post('/api/auth/google', { id_token: response.credential });
+      const res = await axios.post('/api/auth/google', { 
+        id_token: response.credential,
+        role: roleRef.current,
+        workshop_name: roleRef.current === 'PRINTER' ? workshopNameRef.current : undefined
+      });
       onLoginSuccess(res.data.token, res.data.user);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Đăng nhập Google thất bại.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickLogin = async (roleToLogin: 'SELLER' | 'PRINTER') => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post('/api/auth/dev-login', { role: roleToLogin });
+      onLoginSuccess(res.data.token, res.data.user);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Đăng nhập nhanh thất bại.');
     } finally {
       setLoading(false);
     }
@@ -57,7 +83,14 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setError(null);
     setSuccessMsg(null);
     try {
-      const res = await axios.post('/api/auth/register', { name, email, password, role });
+      const res = await axios.post('/api/auth/register', { 
+        name, 
+        email, 
+        password, 
+        role,
+        workshop_name: role === 'PRINTER' ? workshopName : undefined,
+        phone
+      });
       onLoginSuccess(res.data.token, res.data.user);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Đăng ký thất bại.');
@@ -185,7 +218,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25 cursor-pointer disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
               Đăng Nhập
@@ -257,21 +290,73 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <div>
-              <label className="text-slate-700 font-bold mb-1 block">Vai trò trong hệ thống</label>
-              <select
-                value={role}
-                onChange={e => setRole(e.target.value as any)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-800 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
-              >
-                <option value="OPERATOR">OPERATOR - Nhân viên in ấn & đóng gói</option>
-                <option value="ADMIN">ADMIN - Quản trị viên xưởng in</option>
-              </select>
+              <label className="text-slate-700 font-bold mb-1.5 block">Tôi muốn tham gia với vai trò</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole('SELLER')}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    role === 'SELLER'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-bold ring-2 ring-violet-500/20'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="text-sm font-bold flex items-center gap-1.5 mb-0.5">
+                    🏪 Người Bán (Seller)
+                  </div>
+                  <div className="text-[11px] text-slate-500 leading-snug">
+                    Kết nối xưởng, lấy phôi và gửi đơn in POD sang xưởng
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('PRINTER')}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    role === 'PRINTER'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-bold ring-2 ring-violet-500/20'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="text-sm font-bold flex items-center gap-1.5 mb-0.5">
+                    🖨️ Xưởng In (Printer)
+                  </div>
+                  <div className="text-[11px] text-slate-500 leading-snug">
+                    Đăng phôi, phê duyệt hợp tác Seller và nhận đơn in
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {role === 'PRINTER' && (
+              <div>
+                <label className="text-slate-700 font-bold mb-1 block">Tên xưởng in / Workshop</label>
+                <input
+                  type="text"
+                  value={workshopName}
+                  onChange={e => setWorkshopName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
+                  placeholder="VD: Xưởng In Nam Định POD..."
+                  required={role === 'PRINTER'}
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="text-slate-700 font-bold mb-1 block">Số điện thoại liên hệ</label>
+              <input
+                type="text"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
+                placeholder="0901234567"
+              />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25"
+              className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-700 font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-600/25 cursor-pointer disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
               Đăng Ký Tài Khoản
@@ -281,19 +366,105 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
         {/* TAB 3: ĐĂNG NHẬP BẰNG GOOGLE */}
         {activeTab === 'GOOGLE' && (
-          <div className="py-6 text-center space-y-4">
-            <p className="text-xs text-slate-500">Đăng nhập thông qua tài khoản Google Workspace tổ chức</p>
-            {loading ? (
-              <div className="h-[44px] bg-violet-50 border border-violet-200 rounded-full flex items-center justify-center gap-2 text-xs text-violet-700 font-bold">
-                <Loader2 className="w-4 h-4 animate-spin" /> Đang xác thực với Google...
+          <div className="py-2 space-y-4 text-xs">
+            <div>
+              <label className="text-slate-700 font-bold mb-1.5 block">
+                Chọn vai trò của bạn trước khi tiếp tục
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole('SELLER')}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    role === 'SELLER'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-bold ring-2 ring-violet-500/20'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="text-xs font-bold flex items-center gap-1.5 mb-0.5">
+                    🏪 Người Bán (Seller)
+                  </div>
+                  <div className="text-[10px] text-slate-500 leading-snug">
+                    Kết nối xưởng & đặt in đơn POD
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setRole('PRINTER')}
+                  className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                    role === 'PRINTER'
+                      ? 'border-violet-600 bg-violet-50 text-violet-900 font-bold ring-2 ring-violet-500/20'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="text-xs font-bold flex items-center gap-1.5 mb-0.5">
+                    🖨️ Xưởng In (Printer)
+                  </div>
+                  <div className="text-[10px] text-slate-500 leading-snug">
+                    Đăng phôi & nhận sản xuất đơn
+                  </div>
+                </button>
               </div>
-            ) : (
-              <div className="flex justify-center">
-                <div id="google-signin-btn" />
+            </div>
+
+            {role === 'PRINTER' && (
+              <div>
+                <label className="text-slate-700 font-bold mb-1 block">
+                  Tên xưởng in / Workshop (tùy chọn)
+                </label>
+                <input
+                  type="text"
+                  value={workshopName}
+                  onChange={e => setWorkshopName(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-violet-600 font-medium"
+                  placeholder="VD: Xưởng In Hà Nội Direct..."
+                />
               </div>
             )}
+
+            <p className="text-[11px] text-slate-400 text-center leading-tight">
+              (Nếu tài khoản lần đầu đăng nhập, hệ thống sẽ tự động gán vai trò này)
+            </p>
+
+            <div className="pt-2 text-center">
+              {loading ? (
+                <div className="h-[44px] bg-violet-50 border border-violet-200 rounded-full flex items-center justify-center gap-2 text-xs text-violet-700 font-bold">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Đang xác thực với Google...
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <div id="google-signin-btn" />
+                </div>
+              )}
+            </div>
           </div>
         )}
+
+        {/* QUICK TEST LOGIN SHORTCUTS */}
+        <div className="pt-2 border-t border-slate-100">
+          <span className="text-[11px] font-bold text-slate-500 block mb-2 text-center">
+            ⚡ Đăng nhập nhanh tài khoản thử nghiệm:
+          </span>
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('SELLER')}
+              disabled={loading}
+              className="px-2.5 py-2 rounded-lg bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            >
+              🏪 Seller Demo
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('PRINTER')}
+              disabled={loading}
+              className="px-2.5 py-2 rounded-lg bg-violet-50 text-violet-800 font-semibold border border-violet-200 hover:bg-violet-100 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            >
+              🖨️ Xưởng In Demo
+            </button>
+          </div>
+        </div>
 
         <div className="pt-2 text-center border-t border-slate-100">
           <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
