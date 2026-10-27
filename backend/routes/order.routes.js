@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const OrderController = require('../controllers/order.controller');
 const { authenticate, requireRole } = require('../middleware/auth.middleware');
 
+const upload = require('../middleware/upload.middleware');
+
 const router = express.Router();
 
 function verifyVietCraftRefundKey(req, res, next) {
@@ -21,6 +23,7 @@ router.post('/refund-requests', verifyVietCraftRefundKey, OrderController.receiv
 
 // Printer decisions for VietCraft POD refund requests use the existing Printing portal.
 router.get('/refund-requests', authenticate, requireRole(['ADMIN', 'OPERATOR', 'PRINTER']), OrderController.getRefundRequests);
+router.post('/refund-requests/upload-evidence', authenticate, requireRole(['ADMIN', 'OPERATOR', 'PRINTER']), upload.single('file'), OrderController.uploadRefundEvidence);
 router.post('/refund-requests/:requestId/respond', authenticate, requireRole(['ADMIN', 'OPERATOR', 'PRINTER']), OrderController.respondToRefundRequest);
 
 // Protect other endpoints

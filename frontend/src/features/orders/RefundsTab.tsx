@@ -18,9 +18,18 @@ import {
   MessageSquareQuote,
   ShieldCheck,
   Maximize2,
-  X
+  X,
+  UploadCloud,
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  FileVideo,
+  Lightbulb,
+  Sparkles,
+  Check
 } from 'lucide-react';
 import api from '../../services/api';
+
 
 type RefundRequest = {
   _id: string;
@@ -68,6 +77,12 @@ export default function RefundsTab() {
   const [selectedDecision, setSelectedDecision] = useState<'APPROVE' | 'REJECT'>('APPROVE');
   const [decisionNote, setDecisionNote] = useState('');
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+
+  // Minh chứng đối chiếu từ xưởng in khi từ chối yêu cầu
+  const [rejectEvidences, setRejectEvidences] = useState<string[]>([]);
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
+  const [evidenceUploadError, setEvidenceUploadError] = useState('');
+  const evidenceFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Lightbox xem ảnh toàn màn hình
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -128,28 +143,74 @@ export default function RefundsTab() {
 
   const openInspection = (item: RefundRequest, initialDecision: 'APPROVE' | 'REJECT' = 'APPROVE') => {
     setActiveItem(item);
-    setSelectedDecision(initialDecision);
+    setError('');
+    const isAlreadyRejected = item.status === 'REJECTED' || item.status === 'ADMIN_REJECTED';
+    setSelectedDecision(isAlreadyRejected ? 'REJECT' : initialDecision);
     setActiveMediaIndex(0);
+    setRejectEvidences([]);
+    setEvidenceUploadError('');
     setDecisionNote(
-      initialDecision === 'APPROVE'
+      item.seller_response?.note ||
+      (initialDecision === 'APPROVE'
         ? (isExchangeItem(item)
             ? 'Xưởng in đã thẩm định và xác nhận lỗi in ấn. Đồng ý duyệt sản xuất đơn in bù cho khách.'
             : 'Xưởng in xác nhận lỗi sản phẩm, đồng ý duyệt hoàn tiền.')
-        : 'Sản phẩm không thuộc phạm vi bảo hành lỗi kỹ thuật của xưởng in.'
+        : 'Sản phẩm không thuộc phạm vi bảo hành lỗi kỹ thuật của xưởng in.')
     );
+  };
+
+  const handleUploadRejectEvidence = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setUploadingEvidence(true);
+    setEvidenceUploadError('');
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.size > 50 * 1024 * 1024) {
+          throw new Error(`Tệp "${file.name}" vượt quá kích thước 50MB cho phép.`);
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await api.post('/api/orders/refund-requests/upload-evidence', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (res.data?.url) {
+          setRejectEvidences(prev => [...prev, res.data.url]);
+        }
+      }
+    } catch (err: any) {
+      setEvidenceUploadError(err.response?.data?.error || err.message || 'Lỗi khi tải tệp minh chứng lên.');
+    } finally {
+      setUploadingEvidence(false);
+      if (evidenceFileInputRef.current) {
+        evidenceFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const removeRejectEvidence = (indexToRemove: number) => {
+    setRejectEvidences(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const submitDecision = async () => {
     if (!activeItem || decisionNote.trim().length < 3) return;
+    if (selectedDecision === 'REJECT' && rejectEvidences.length === 0) {
+      setEvidenceUploadError('Vui lòng đính kèm ít nhất 1 hình ảnh hoặc video minh chứng đối chiếu từ xưởng in trước khi từ chối.');
+      return;
+    }
     setBusy(activeItem._id); 
     setError('');
+    setEvidenceUploadError('');
     try {
       await api.post(`/api/orders/refund-requests/${encodeURIComponent(activeItem._id)}/respond`, { 
         decision: selectedDecision, 
-        note: decisionNote.trim() 
+        note: decisionNote.trim(),
+        evidence: selectedDecision === 'REJECT' ? rejectEvidences : []
       });
       setActiveItem(null); 
       setDecisionNote('');
+      setRejectEvidences([]);
       await load();
     } catch (cause: any) {
       setError(cause.response?.data?.error || 'Không gửi được phản hồi về VietCraft.');
@@ -157,6 +218,7 @@ export default function RefundsTab() {
       setBusy(''); 
     }
   };
+
 
   const filteredItems = useMemo(() => {
     return items.filter(item => {
@@ -406,7 +468,7 @@ export default function RefundsTab() {
                           <div className="inline-flex items-center gap-1.5">
                             {item.evidence.slice(0, 2).map((url, idx) => (
                               <button
-                                key={url}
+                                key={`${url}-${idx}`}
                                 type="button"
                                 onClick={() => openInspection(item)}
                                 className="group relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 focus:outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer"
@@ -464,48 +526,27 @@ export default function RefundsTab() {
 
                       {/* 6. Thao tác */}
                       <td className="px-4 py-3.5 align-top text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openInspection(item)}
-                            className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
-                            title="Xem chi tiết thẩm định"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
+                        <div className="flex items-center justify-end">
                           {item.status === 'PENDING_PRINTER' ? (
-                            <>
-                              <button
-                                type="button"
-                                disabled={busy === item._id}
-                                onClick={() => openInspection(item, 'REJECT')}
-                                className="px-2.5 py-1.5 rounded-xl border border-red-200 text-red-700 font-semibold hover:bg-red-50 text-[11px] transition-colors disabled:opacity-50 cursor-pointer"
-                              >
-                                Từ chối
-                              </button>
-
-                              <button
-                                type="button"
-                                disabled={busy === item._id}
-                                onClick={() => openInspection(item, 'APPROVE')}
-                                className={`px-3 py-1.5 rounded-xl text-white font-bold text-[11px] transition-all shadow-xs disabled:opacity-50 cursor-pointer ${
-                                  isExchange 
-                                    ? 'bg-indigo-600 hover:bg-indigo-700' 
-                                    : 'bg-violet-600 hover:bg-violet-700'
-                                }`}
-                              >
-                                {isExchange ? 'Duyệt in bù (0đ)' : 'Duyệt hoàn tiền'}
-                              </button>
-                            </>
-                          ) : item.status === 'APPROVED' ? (
-                            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                              ✓ Đã xử lý
-                            </span>
+                            <button
+                              type="button"
+                              disabled={busy === item._id}
+                              onClick={() => openInspection(item)}
+                              className="px-3.5 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-700 active:scale-[0.98] text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <span>Thẩm định</span>
+                            </button>
                           ) : (
-                            <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                              Đã đóng
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => openInspection(item)}
+                              className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                              title="Xem chi tiết thẩm định"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Chi tiết</span>
+                            </button>
                           )}
                         </div>
                       </td>
@@ -531,21 +572,21 @@ export default function RefundsTab() {
             onClick={e => e.stopPropagation()}
           >
             {/* 1. Header Bar */}
-            <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 sm:px-6 py-4 backdrop-blur-md">
+            <div className="flex-shrink-0 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 sm:px-6 py-3.5 backdrop-blur-md">
               <div className="flex items-center gap-2.5 min-w-0">
                 <span 
-                  className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2.5 py-1 rounded-md border border-slate-200 truncate max-w-[200px] sm:max-w-xs" 
+                  className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2.5 py-1 rounded-lg border border-slate-200 truncate max-w-[200px] sm:max-w-xs shadow-2xs" 
                   title={typeof activeItem.order_id === 'object' ? activeItem.order_id?.order_code : activeItem.order_id}
                 >
                   #{typeof activeItem.order_id === 'object' ? activeItem.order_id?.order_code : activeItem.order_id}
                 </span>
                 {isExchangeItem(activeItem) ? (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-indigo-50 border border-indigo-200 px-2.5 py-1 text-xs font-bold text-indigo-700 whitespace-nowrap">
-                    <ArrowRightLeft className="w-3.5 h-3.5" /> YÊU CẦU ĐỔI HÀNG (IN BÙ)
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 border border-indigo-200/80 px-3 py-1 text-xs font-bold text-indigo-700 whitespace-nowrap shadow-2xs">
+                    <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-600" /> YÊU CẦU ĐỔI HÀNG (IN BÙ)
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs font-bold text-amber-800 whitespace-nowrap">
-                    <DollarSign className="w-3.5 h-3.5" /> YÊU CẦU HOÀN TIỀN
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 px-3 py-1 text-xs font-bold text-emerald-800 whitespace-nowrap shadow-2xs">
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-600" /> YÊU CẦU HOÀN TIỀN
                   </span>
                 )}
                 <span className="text-xs text-slate-400 font-medium hidden md:inline">
@@ -564,104 +605,165 @@ export default function RefundsTab() {
             </div>
 
             {/* 2. Scrollable Body: 2-Column Responsive Layout */}
-            <div className="flex-1 overflow-y-auto min-h-0 divide-y md:divide-y-0 md:divide-x divide-slate-100 grid grid-cols-1 md:grid-cols-12 bg-white">
+            <div className="flex-1 min-h-0 overflow-y-auto md:overflow-hidden grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-slate-100 bg-white">
               {/* Left Column (7 cols): Order, Product Spec, Decision */}
-              <div className="p-5 sm:p-6 md:col-span-7 space-y-5">
-                {/* A. Customer & Order Info */}
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span className="flex items-center gap-1.5 font-semibold text-slate-700">
-                      <User className="w-3.5 h-3.5 text-violet-600" />
-                      {typeof activeItem.buyer_id === 'object' ? activeItem.buyer_id?.full_name : 'Khách hàng'}
-                    </span>
-                    <span className="font-mono text-slate-400">
-                      {typeof activeItem.buyer_id === 'object' ? activeItem.buyer_id?.email : '—'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200/60">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-slate-400" />
-                      Ngày gửi: {activeItem.created_at ? new Date(activeItem.created_at).toLocaleString('vi-VN') : 'Mới đây'}
-                    </span>
-                    {activeItem.sla_deadlines?.printer_deadline && (
-                      <span className="text-amber-700 font-semibold font-mono">
-                        SLA: {new Date(activeItem.sla_deadlines.printer_deadline).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              <div className="p-5 sm:p-6 md:col-span-7 md:h-full md:overflow-y-auto space-y-4">
+                {/* A. Product & Order Context */}
+                <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50/80 to-white p-4 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between text-xs pb-2.5 border-b border-slate-100">
+                    <div className="flex items-center gap-2 text-slate-700 min-w-0">
+                      <div className="w-6 h-6 rounded-full bg-violet-100 text-violet-700 flex items-center justify-center flex-shrink-0">
+                        <User className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-semibold truncate">
+                        {typeof activeItem.buyer_id === 'object' ? activeItem.buyer_id?.full_name : 'Khách hàng'}
                       </span>
-                    )}
+                      <span className="text-slate-400 font-mono text-[11px] hidden sm:inline truncate max-w-[150px]">
+                        ({typeof activeItem.buyer_id === 'object' ? activeItem.buyer_id?.email : '—'})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-500 flex-shrink-0">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-slate-400" />
+                        {activeItem.created_at ? new Date(activeItem.created_at).toLocaleDateString('vi-VN') : 'Mới đây'}
+                      </span>
+                      {activeItem.sla_deadlines?.printer_deadline && (
+                        <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full font-semibold font-mono text-[10px]">
+                          <Clock3 className="w-2.5 h-2.5" />
+                          SLA {new Date(activeItem.sla_deadlines.printer_deadline).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* B. Product to Print Specification */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 m-0">
-                    Sản phẩm xưởng in sản xuất lại:
-                  </h3>
-                  <div className="flex items-start gap-3.5 rounded-2xl border border-slate-100 bg-white p-3.5 shadow-xs">
+                  <div className="flex items-start gap-3.5">
                     {activeItem.item_snapshot?.image ? (
                       <img 
                         src={activeItem.item_snapshot.image} 
                         alt={activeItem.item_snapshot.title || 'Phôi in'} 
-                        className="w-14 h-14 rounded-xl object-cover border border-slate-200 flex-shrink-0"
+                        className="w-16 h-16 rounded-xl object-cover border border-slate-200/90 shadow-2xs flex-shrink-0 bg-slate-50 cursor-zoom-in"
+                        onClick={() => setLightboxUrl(activeItem.item_snapshot?.image || null)}
                       />
                     ) : (
-                      <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400">
-                        <Package className="w-6 h-6" />
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
+                        <Package className="w-7 h-7" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-sm text-slate-900 m-0 truncate">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          {isExchangeItem(activeItem) ? 'Sản phẩm yêu cầu in bù' : 'Sản phẩm khiếu nại hoàn tiền'}
+                        </span>
+                      </div>
+                      <h4 className="font-bold text-sm text-slate-900 m-0 truncate mt-0.5">
                         {activeItem.item_snapshot?.title || 'Sản phẩm in ấn theo yêu cầu'}
                       </h4>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                         {activeItem.item_snapshot?.color && (
-                          <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-700 text-[11px]">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-700 text-[11px] border border-slate-200/60">
                             Màu: <b>{activeItem.item_snapshot.color}</b>
                           </span>
                         )}
                         {activeItem.item_snapshot?.size && (
-                          <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-700 text-[11px]">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded-md font-medium text-slate-700 text-[11px] border border-slate-200/60">
                             Size: <b>{activeItem.item_snapshot.size}</b>
                           </span>
                         )}
-                        <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-bold text-indigo-700 text-[11px]">
-                          SL in bù: {activeItem.quantity || 1}
-                        </span>
+                        {isExchangeItem(activeItem) ? (
+                          <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md font-bold text-indigo-700 text-[11px]">
+                            SL in bù: {activeItem.quantity || 1}
+                          </span>
+                        ) : (
+                          <span className="bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md font-bold text-amber-800 text-[11px]">
+                            SL hoàn: {activeItem.quantity || 1}
+                          </span>
+                        )}
+                        {typeof activeItem.refund_amount === 'number' && activeItem.refund_amount > 0 && !isExchangeItem(activeItem) && (
+                          <span className="bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-bold text-emerald-700 text-[11px]">
+                            {activeItem.refund_amount.toLocaleString('vi-VN')}đ
+                          </span>
+                        )}
                       </div>
                       {activeItem.item_snapshot?.design_file_url && (
                         <a 
                           href={activeItem.item_snapshot.design_file_url} 
                           target="_blank" 
                           rel="noreferrer" 
-                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-violet-700 hover:underline"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-violet-700 hover:text-violet-900 hover:underline"
                         >
-                          <ExternalLink className="w-3 h-3" /> Tải file thiết kế in gốc (chất lượng cao)
+                          <ExternalLink className="w-3.5 h-3.5" /> Tải file thiết kế in gốc (chất lượng cao)
                         </a>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* C. Return Reason & Buyer Statement */}
-                <div className="space-y-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 m-0">
-                    Lý do báo lỗi từ khách hàng:
-                  </h3>
-                  <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 space-y-2">
-                    <span className="font-bold text-xs text-violet-800 bg-violet-50 px-2.5 py-1 rounded-md border border-violet-200 inline-block">
+                {/* B. Return Reason & Buyer Statement */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 m-0">
+                      Lý do báo lỗi từ khách hàng:
+                    </h3>
+                    <span className="font-bold text-[11px] text-violet-800 bg-violet-50 px-2.5 py-0.5 rounded-md border border-violet-200">
                       {activeItem.reason_category}
                     </span>
-                    <div className="flex items-start gap-2 pt-1 text-xs text-slate-700">
-                      <MessageSquareQuote className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
-                      <p className="m-0 leading-relaxed italic">
-                        "{activeItem.description || 'Không có mô tả chi tiết từ khách.'}"
-                      </p>
-                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50/70 p-3.5 flex items-start gap-2.5 text-xs text-slate-700">
+                    <MessageSquareQuote className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                    <p className="m-0 leading-relaxed italic text-slate-800 font-normal">
+                      "{activeItem.description || 'Không có mô tả chi tiết từ khách.'}"
+                    </p>
                   </div>
                 </div>
 
-                {/* D. Audit Decision Selector */}
-                <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 m-0 flex items-center gap-1.5">
+                {/* C. Audit Decision Selector / Result */}
+                {activeItem.status !== 'PENDING_PRINTER' ? (
+                  <div className="space-y-3 pt-1">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-700 m-0 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-violet-600" />
+                      Kết quả thẩm định từ xưởng in:
+                    </h3>
+                    <div className={`p-4 rounded-2xl border ${
+                      activeItem.status === 'APPROVED' || activeItem.status === 'COMPLETED'
+                        ? 'border-emerald-200 bg-emerald-50/70 text-emerald-950'
+                        : activeItem.status === 'DISPUTED'
+                        ? 'border-purple-200 bg-purple-50/70 text-purple-950'
+                        : 'border-rose-200 bg-rose-50/70 text-rose-950'
+                    } space-y-2.5`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs flex items-center gap-1.5">
+                          {activeItem.status === 'APPROVED' || activeItem.status === 'COMPLETED' ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              <span>{isExchangeItem(activeItem) ? 'Đã duyệt In Bù (0đ)' : 'Đã chấp thuận Hoàn Tiền'}</span>
+                            </>
+                          ) : activeItem.status === 'DISPUTED' ? (
+                            <>
+                              <AlertTriangle className="w-4 h-4 text-purple-600" />
+                              <span>Đơn đang khiếu nại tranh chấp (Dispute)</span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 text-rose-600" />
+                              <span>Đã từ chối yêu cầu</span>
+                            </>
+                          )}
+                        </span>
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/90 border border-slate-200 shadow-2xs">
+                          {activeItem.status === 'REJECTED' ? 'ĐÃ TỪ CHỐI' : activeItem.status}
+                        </span>
+                      </div>
+                      {decisionNote && (
+                        <div className="bg-white/90 rounded-xl p-3 border border-slate-200/80 text-xs text-slate-700">
+                          <span className="font-bold text-slate-800 block text-[11px] mb-1">Ghi chú đã phản hồi:</span>
+                          <p className="m-0 leading-relaxed italic">"{decisionNote}"</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                <div className="space-y-3 pt-1">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-700 m-0 flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-violet-600" />
                     Quyết định thẩm định của xưởng in:
                   </h3>
@@ -677,26 +779,33 @@ export default function RefundsTab() {
                             : 'Xưởng in xác nhận lỗi sản phẩm, đồng ý duyệt hoàn tiền.'
                         );
                       }}
-                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
                         selectedDecision === 'APPROVE'
                           ? (isExchangeItem(activeItem) 
-                              ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200 text-indigo-900' 
-                              : 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200 text-emerald-900')
-                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                              ? 'border-indigo-600 bg-indigo-50/70 ring-2 ring-indigo-200/80 text-indigo-950 shadow-sm' 
+                              : 'border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-200/80 text-emerald-950 shadow-sm')
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70 text-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs">
-                          {isExchangeItem(activeItem) ? '✓ Duyệt In Bù (0đ)' : '✓ Chấp thuận Hoàn Tiền'}
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-bold text-xs flex items-center gap-1.5">
+                          <CheckCircle2 className={`w-4 h-4 ${
+                            selectedDecision === 'APPROVE'
+                              ? (isExchangeItem(activeItem) ? 'text-indigo-600' : 'text-emerald-600')
+                              : 'text-slate-400 group-hover:text-slate-600'
+                          }`} />
+                          {isExchangeItem(activeItem) ? 'Duyệt In Bù (0đ)' : 'Chấp thuận Hoàn Tiền'}
                         </span>
-                        <div className={`w-3.5 h-3.5 rounded-full border-2 ${
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
                           selectedDecision === 'APPROVE' 
-                            ? (isExchangeItem(activeItem) ? 'border-indigo-600 bg-indigo-600' : 'border-emerald-600 bg-emerald-600') 
+                            ? (isExchangeItem(activeItem) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-emerald-600 bg-emerald-600 text-white') 
                             : 'border-slate-300'
-                        }`} />
+                        }`}>
+                          {selectedDecision === 'APPROVE' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
                       </div>
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        {isExchangeItem(activeItem) ? 'Tạo đơn sản xuất in lại cho khách' : 'Chuyển Admin hoàn tiền cho khách'}
+                      <span className="text-[11px] text-slate-500 mt-2 block">
+                        {isExchangeItem(activeItem) ? 'Lập lệnh sản xuất in lại cho khách' : 'Chuyển Admin hoàn tiền cho khách'}
                       </span>
                     </button>
 
@@ -706,54 +815,243 @@ export default function RefundsTab() {
                         setSelectedDecision('REJECT');
                         setDecisionNote('Sản phẩm không thuộc phạm vi bảo hành lỗi kỹ thuật của xưởng in.');
                       }}
-                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
                         selectedDecision === 'REJECT'
-                          ? 'border-red-600 bg-red-50/70 ring-2 ring-red-200 text-red-900'
-                          : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                          ? 'border-rose-600 bg-rose-50/70 ring-2 ring-rose-200/80 text-rose-950 shadow-sm'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70 text-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-red-700">✕ Từ chối yêu cầu</span>
-                        <div className={`w-3.5 h-3.5 rounded-full border-2 ${
-                          selectedDecision === 'REJECT' ? 'border-red-600 bg-red-600' : 'border-slate-300'
-                        }`} />
+                      <div className="flex items-center justify-between w-full">
+                        <span className="font-bold text-xs flex items-center gap-1.5">
+                          <XCircle className={`w-4 h-4 ${
+                            selectedDecision === 'REJECT' ? 'text-rose-600' : 'text-slate-400 group-hover:text-slate-600'
+                          }`} />
+                          <span className={selectedDecision === 'REJECT' ? 'text-rose-700' : ''}>Từ chối yêu cầu</span>
+                        </span>
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          selectedDecision === 'REJECT' ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-300'
+                        }`}>
+                          {selectedDecision === 'REJECT' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
                       </div>
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        Sản phẩm không lỗi hoặc do khách dùng sai
+                      <span className="text-[11px] text-slate-500 mt-2 block">
+                        Sản phẩm đạt chuẩn hoặc do khách
                       </span>
                     </button>
                   </div>
 
                   <div>
-                    <label htmlFor="modal-decision-note" className="block text-xs font-bold text-slate-700 mb-1.5">
-                      Ghi chú phản hồi <span className="text-red-600">*</span>:
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label htmlFor="modal-decision-note" className="block text-xs font-bold text-slate-700">
+                        Ghi chú thẩm định kỹ thuật <span className="text-rose-500">*</span>:
+                      </label>
+                      <span className="text-[10px] text-slate-400">
+                        {decisionNote.length}/1000 ký tự
+                      </span>
+                    </div>
+
+                    {/* Quick suggestion templates */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-violet-500" /> Mẫu nhanh:
+                      </span>
+                      {selectedDecision === 'APPROVE' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setDecisionNote(isExchangeItem(activeItem) ? 'Xác nhận lỗi kỹ thuật xưởng in (lệch màu / bong tróc). Đồng ý in bù miễn phí.' : 'Xác nhận sản phẩm lỗi in, xưởng đồng ý duyệt hoàn tiền cho khách.')}
+                            className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                          >
+                            Lỗi in ấn kỹ thuật
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDecisionNote('Lỗi phôi áo / đường may từ khâu xuất kho xưởng in. Chấp nhận xử lý.')}
+                            className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                          >
+                            Lỗi phôi sản phẩm
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setDecisionNote('Sản phẩm đúng thông số kỹ thuật, hình in sắc nét chuẩn theo file thiết kế đã duyệt.')}
+                            className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                          >
+                            Đúng chuẩn thiết kế
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDecisionNote('Kích thước và vị trí in nằm trong dung sai kỹ thuật cho phép (dưới 1cm).')}
+                            className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                          >
+                            Trong dung sai
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDecisionNote('Vết bẩn / hư hại phát sinh do bảo quản hoặc ngoại lực sau khi nhận hàng.')}
+                            className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60 px-2 py-0.5 rounded-md transition-colors cursor-pointer"
+                          >
+                            Lỗi do ngoại lực
+                          </button>
+                        </>
+                      )}
+                    </div>
+
                     <textarea 
                       id="modal-decision-note"
                       rows={3}
                       value={decisionNote}
                       onChange={e => setDecisionNote(e.target.value)}
                       placeholder="Nhập chi tiết thẩm định kỹ thuật..."
-                      className="w-full resize-none rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 leading-relaxed outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-100"
+                      className="w-full resize-none rounded-xl border border-slate-300 p-2.5 text-xs text-slate-800 leading-relaxed outline-none focus:border-violet-600 focus:ring-2 focus:ring-violet-100 transition-all placeholder:text-slate-400 bg-white"
                     />
                     <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
                       <span>Ghi chú này sẽ đồng bộ trực tiếp lên sàn VietCraft</span>
-                      <span>{decisionNote.length}/1000 ký tự</span>
                     </div>
                   </div>
+
+                  {/* Minh chứng đối chiếu bắt buộc khi Từ chối */}
+                  {selectedDecision === 'REJECT' && (
+                    <div className="rounded-2xl border border-rose-200/90 bg-gradient-to-b from-rose-50/40 via-white to-rose-50/20 p-4 space-y-3 transition-all shadow-2xs">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <Camera className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                            <h4 className="text-xs font-bold text-slate-900 m-0">
+                              Minh chứng đối chiếu từ xưởng in <span className="text-rose-600">*</span>
+                            </h4>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-1 mb-0 leading-relaxed">
+                            Bắt buộc tải ảnh sản phẩm thành phẩm, tem nhãn ngày xuất xưởng hoặc camera đóng gói để bảo vệ quyền lợi xưởng in khi Admin giải quyết tranh chấp (dispute).
+                          </p>
+                        </div>
+                        {rejectEvidences.length > 0 ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex-shrink-0">
+                            <Check className="w-3 h-3 stroke-[3]" /> {rejectEvidences.length} tệp
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-md flex-shrink-0 whitespace-nowrap">
+                            Bắt buộc
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Hidden File Input */}
+                      <input 
+                        type="file" 
+                        ref={evidenceFileInputRef}
+                        onChange={handleUploadRejectEvidence}
+                        multiple
+                        accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime"
+                        className="hidden"
+                      />
+
+                      {/* Modern Upload Button Dropzone */}
+                      <button
+                        type="button"
+                        onClick={() => evidenceFileInputRef.current?.click()}
+                        disabled={uploadingEvidence}
+                        className="w-full py-3.5 px-4 rounded-xl border-2 border-dashed border-rose-300 hover:border-rose-500 bg-white/80 hover:bg-rose-50/40 transition-all flex items-center justify-center gap-3 cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-rose-50 group-hover:bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0 transition-colors">
+                          {uploadingEvidence ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <UploadCloud className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                          )}
+                        </div>
+                        <div className="text-left">
+                          <span className="text-xs font-bold text-slate-800 block group-hover:text-rose-700 transition-colors">
+                            {uploadingEvidence ? 'Đang tải tệp lên máy chủ...' : '+ Tải thêm ảnh hoặc video minh chứng'}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block mt-0.5">
+                            Hỗ trợ PNG, JPG, WEBP hoặc video MP4 (tối đa 50MB)
+                          </span>
+                        </div>
+                      </button>
+
+                      {evidenceUploadError && (
+                        <div className="text-[11px] text-rose-600 font-semibold bg-rose-50 border border-rose-200 rounded-xl p-2.5 flex items-center gap-1.5">
+                          <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                          <span>{evidenceUploadError}</span>
+                        </div>
+                      )}
+
+                      {/* Thumbnails of uploaded evidence */}
+                      {rejectEvidences.length > 0 ? (
+                        <div className="space-y-1.5 pt-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                            Tệp minh chứng đã tải lên:
+                          </span>
+                          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2.5">
+                            {rejectEvidences.map((url, idx) => {
+                              const isVid = url.match(/\.(mp4|webm|mov)(\?|$)/i);
+                              return (
+                                <div 
+                                  key={`${url}-${idx}`} 
+                                  className="relative group aspect-square rounded-xl border border-slate-200/90 bg-slate-900 overflow-hidden shadow-2xs hover:shadow-md transition-all"
+                                >
+                                  {isVid ? (
+                                    <div className="w-full h-full flex items-center justify-center relative">
+                                      <video src={url} className="w-full h-full object-cover opacity-80" />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                                        <FileVideo className="w-5 h-5 text-white" />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={url} 
+                                      alt={`Minh chứng xưởng ${idx + 1}`} 
+                                      className="w-full h-full object-cover cursor-zoom-in group-hover:scale-105 transition-transform" 
+                                      onClick={() => setLightboxUrl(url)}
+                                    />
+                                  )}
+                                  
+                                  {/* Delete button */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeRejectEvidence(idx);
+                                    }}
+                                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 hover:scale-110 transition-all shadow-sm cursor-pointer"
+                                    title="Xoá tệp này"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-[11px] text-rose-700 bg-rose-50/80 rounded-xl p-2.5 flex items-center gap-2 border border-rose-200/60">
+                          <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                          <span>Chưa có minh chứng. Nút <strong>Xác nhận Từ Chối</strong> sẽ được mở sau khi bạn đính kèm ít nhất 1 ảnh hoặc video đối chiếu.</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
+                )}
               </div>
 
+
               {/* Right Column (5 cols): Media Evidence Gallery */}
-              <div className="p-5 sm:p-6 md:col-span-5 bg-slate-50/60 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 m-0">
-                      Ảnh & Video minh chứng từ khách:
-                    </h3>
+              <div className="p-5 sm:p-6 md:col-span-5 bg-slate-50/70 flex flex-col justify-between space-y-4 md:h-full md:overflow-y-auto">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-violet-600" />
+                      <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-600 m-0">
+                        Minh chứng từ người mua:
+                      </h3>
+                    </div>
                     {activeItem.evidence && activeItem.evidence.length > 0 && (
-                      <span className="text-[11px] font-bold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded-md">
-                        {activeMediaIndex + 1}/{activeItem.evidence.length}
+                      <span className="text-[11px] font-bold text-slate-600 bg-white border border-slate-200/80 px-2 py-0.5 rounded-md shadow-2xs font-mono">
+                        {activeMediaIndex + 1} / {activeItem.evidence.length}
                       </span>
                     )}
                   </div>
@@ -761,7 +1059,7 @@ export default function RefundsTab() {
                   {/* Main Media Preview Frame */}
                   {activeItem.evidence && activeItem.evidence.length > 0 ? (
                     <div className="space-y-3">
-                      <div className="relative group w-full h-[260px] rounded-2xl bg-slate-900 border border-slate-200 overflow-hidden flex items-center justify-center shadow-xs">
+                      <div className="relative group w-full aspect-[4/3] rounded-2xl bg-slate-950 border border-slate-200/80 overflow-hidden flex items-center justify-center shadow-inner">
                         {activeItem.evidence[activeMediaIndex]?.match(/\.(mp4|webm|mov)(\?|$)/i) ? (
                           <video 
                             src={activeItem.evidence[activeMediaIndex]} 
@@ -772,17 +1070,18 @@ export default function RefundsTab() {
                           <img 
                             src={activeItem.evidence[activeMediaIndex]} 
                             alt={`Minh chứng ${activeMediaIndex + 1}`} 
-                            className="max-h-full max-w-full object-contain cursor-zoom-in"
+                            className="max-h-full max-w-full object-contain cursor-zoom-in transition-transform duration-300 group-hover:scale-[1.02]"
                             onClick={() => setLightboxUrl(activeItem.evidence[activeMediaIndex])}
                           />
                         )}
 
-                        <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Quick Action Overlay */}
+                        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             type="button"
                             onClick={() => setLightboxUrl(activeItem.evidence[activeMediaIndex])}
-                            className="p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
-                            title="Phóng to"
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-colors cursor-pointer shadow-2xs"
+                            title="Phóng to ảnh"
                           >
                             <Maximize2 className="w-3.5 h-3.5" />
                           </button>
@@ -790,12 +1089,34 @@ export default function RefundsTab() {
                             href={activeItem.evidence[activeMediaIndex]}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1.5 rounded-lg bg-black/60 text-white hover:bg-black/80 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-md transition-colors cursor-pointer shadow-2xs"
                             title="Mở trong tab mới"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </a>
                         </div>
+
+                        {/* Prev/Next arrows on hover if multiple images */}
+                        {activeItem.evidence.length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaIndex(prev => (prev === 0 ? activeItem.evidence.length - 1 : prev - 1))}
+                              className="absolute left-2 p-1.5 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Ảnh trước"
+                            >
+                              <ChevronLeft className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActiveMediaIndex(prev => (prev === activeItem.evidence.length - 1 ? 0 : prev + 1))}
+                              className="absolute right-2 p-1.5 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Ảnh tiếp"
+                            >
+                              <ChevronRight className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                       </div>
 
                       {/* Evidence Thumbnails Strip */}
@@ -803,13 +1124,13 @@ export default function RefundsTab() {
                         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                           {activeItem.evidence.map((url, idx) => (
                             <button
-                              key={url}
+                              key={`${url}-${idx}`}
                               type="button"
                               onClick={() => setActiveMediaIndex(idx)}
-                              className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all cursor-pointer ${
+                              className={`w-14 h-14 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all cursor-pointer bg-slate-900 ${
                                 activeMediaIndex === idx
-                                  ? 'border-violet-600 ring-2 ring-violet-200 scale-105'
-                                  : 'border-slate-200 opacity-60 hover:opacity-100'
+                                  ? 'border-violet-600 ring-2 ring-violet-200 scale-105 shadow-sm'
+                                  : 'border-slate-200/80 opacity-60 hover:opacity-100'
                               }`}
                             >
                               <img src={url} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
@@ -819,67 +1140,106 @@ export default function RefundsTab() {
                       )}
                     </div>
                   ) : (
-                    <div className="h-[260px] rounded-2xl border border-dashed border-slate-200 bg-white flex flex-col items-center justify-center text-slate-400 text-xs p-6 text-center">
+                    <div className="aspect-[4/3] rounded-2xl border-2 border-dashed border-slate-200 bg-white/60 flex flex-col items-center justify-center text-slate-400 text-xs p-6 text-center">
                       <Package className="w-8 h-8 opacity-40 mb-2" />
                       <span>Người mua không tải lên ảnh hoặc video minh chứng kèm theo đơn.</span>
                     </div>
                   )}
                 </div>
 
-                <div className="rounded-xl border border-slate-200/80 bg-white p-3 text-[11px] text-slate-500 space-y-1">
-                  <p className="font-semibold text-slate-700 m-0">💡 Hướng dẫn kiểm tra:</p>
-                  <p className="m-0 leading-relaxed">
-                    Xác nhận đúng vị trí hình in bị lệch, phôi áo bị rách hoặc ố vàng trước khi bấm duyệt in bù.
+                {/* Contextual Tips Box */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-3.5 text-xs text-slate-600 space-y-1.5 shadow-2xs">
+                  <div className="flex items-center gap-1.5 font-bold text-slate-800 text-[11px] uppercase tracking-wider">
+                    <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Lưu ý thẩm định:</span>
+                  </div>
+                  <p className="m-0 leading-relaxed text-[11px] text-slate-500">
+                    {activeItem.status !== 'PENDING_PRINTER'
+                      ? 'Yêu cầu này đã được xử lý xong và chuyển sang trạng thái lưu trữ / đối soát.'
+                      : selectedDecision === 'REJECT'
+                      ? 'Khi từ chối, xưởng in cần đính kèm ảnh rõ nét (tem nhãn, kích thước, ảnh lưu kho). Admin sẽ căn cứ vào đây để phân xử khi người mua khiếu nại tranh chấp.'
+                      : isExchangeItem(activeItem)
+                      ? 'Xác nhận đúng vị trí hình in bị lỗi hoặc phôi áo bị lỗi trước khi duyệt. Hệ thống sẽ tạo lệnh in bù tự động cho xưởng.'
+                      : 'Xưởng in xác nhận lỗi sản phẩm. Khi bấm chấp thuận, yêu cầu sẽ chuyển về Admin sàn VietCraft để tiến hành hoàn tiền cho người mua.'}
                   </p>
                 </div>
               </div>
             </div>
 
+            {/* Error Banner inside modal if any */}
+            {error && (
+              <div className="mx-6 mb-3 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* 3. Sticky Footer Actions */}
-            <div className="flex-shrink-0 flex items-center justify-between border-t border-slate-100 bg-slate-50/95 px-5 sm:px-6 py-3.5 backdrop-blur-md">
-              <span className="text-xs text-slate-500 hidden sm:inline">
-                Trạng thái: <strong className="text-amber-700 font-semibold">Chờ xưởng in phản hồi</strong>
-              </span>
+            <div className="flex-shrink-0 flex items-center justify-between border-t border-slate-100 bg-white/95 px-5 sm:px-6 py-3.5 backdrop-blur-md">
+              <div className="flex items-center gap-2">
+                {activeItem.status === 'PENDING_PRINTER' ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                    <span className="text-xs text-slate-500 hidden sm:inline">
+                      Trạng thái: <strong className="text-slate-800 font-semibold">Chờ xưởng in phản hồi</strong>
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs text-slate-500">
+                    Trạng thái: <strong className="text-slate-800 font-semibold">{activeItem.status === 'REJECTED' ? 'Đã từ chối' : activeItem.status}</strong>
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={() => setActiveItem(null)}
                   disabled={!!busy}
-                  className="min-h-[40px] rounded-xl border border-slate-300 px-4 text-xs font-bold text-slate-700 hover:bg-white transition-colors cursor-pointer"
+                  className="min-h-[40px] rounded-xl border border-slate-200 px-4 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors cursor-pointer"
                 >
                   Đóng
                 </button>
 
-                <button
-                  type="button"
-                  onClick={submitDecision}
-                  disabled={!!busy || decisionNote.trim().length < 3}
-                  className={`min-h-[40px] rounded-xl px-5 text-xs font-bold text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-                    selectedDecision === 'APPROVE'
-                      ? (isExchangeItem(activeItem) 
-                          ? 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]' 
-                          : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]')
-                      : 'bg-red-600 hover:bg-red-700 active:scale-[0.98]'
-                  }`}
-                >
-                  {busy ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Đang gửi phản hồi…</span>
-                    </>
-                  ) : selectedDecision === 'APPROVE' ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{isExchangeItem(activeItem) ? 'Xác nhận Duyệt In Bù (0đ)' : 'Xác nhận Chấp Thuận'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-4 h-4" />
-                      <span>Xác nhận Từ Chối</span>
-                    </>
-                  )}
-                </button>
+                {activeItem.status === 'PENDING_PRINTER' && (
+                  <button
+                    type="button"
+                    onClick={submitDecision}
+                    disabled={
+                      !!busy || 
+                      decisionNote.trim().length < 3 || 
+                      (selectedDecision === 'REJECT' && rejectEvidences.length === 0) || 
+                      uploadingEvidence
+                    }
+                    className={`min-h-[40px] rounded-xl px-5 text-xs font-bold text-white transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                      selectedDecision === 'APPROVE'
+                        ? (isExchangeItem(activeItem) 
+                            ? 'bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] shadow-indigo-600/20' 
+                            : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] shadow-emerald-600/20')
+                        : 'bg-rose-600 hover:bg-rose-700 active:scale-[0.98] shadow-rose-600/20'
+                    }`}
+                  >
+                    {busy ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang gửi phản hồi…</span>
+                      </>
+                    ) : selectedDecision === 'APPROVE' ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{isExchangeItem(activeItem) ? 'Xác nhận Duyệt In Bù (0đ)' : 'Xác nhận Chấp Thuận Hoàn Tiền'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-4 h-4" />
+                        <span>Xác nhận Từ Chối Yêu Cầu</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
