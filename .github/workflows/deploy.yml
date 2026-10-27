@@ -1,0 +1,35 @@
+name: Deploy Printing Shop to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH to VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          script_stop: true
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            echo "Syncing latest Printing-shop code..."
+            cd Printing-shop
+            git fetch origin main
+            git reset --hard origin/main
+            cd ..
+
+            echo "Rebuilding & restarting Printing-shop containers..."
+            docker compose build printing-backend printing-frontend
+            docker compose up -d --no-deps printing-backend printing-frontend
+
+            docker image prune -f
+            echo "Printing-shop deployed!"
