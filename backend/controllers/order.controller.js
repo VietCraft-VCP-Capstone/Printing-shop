@@ -3,6 +3,23 @@ const WebhookService = require('../services/webhook.service');
 const RefundProxyService = require('../services/refund-proxy.service');
 const { uploadToCloudinary, isCloudinaryEnabled } = require('../services/cloudinary.service');
 
+async function filterRefundsForUser(user, rawList) {
+  const pId = user._id.toString();
+  const myOrders = await PrintOrder.find({
+    $or: [
+      { printer_id: pId },
+      ...(user.email === 'printer@vietcraft.print' || !user.printer_id ? [{ printer_id: { $exists: false } }, { printer_id: null }] : [])
+    ]
+  }).select('order_code').lean();
+  const myCodes = new Set(myOrders.map(o => o.order_code));
+  return rawList.filter(r => {
+    const code = r.order_code || r.order_id?.order_code || '';
+    if (myCodes.has(code)) return true;
+    if (myCodes.size === 0) return true;
+    return false;
+  });
+}
+
 class OrderController {
   static async getAllOrders(req, res) {
     try {
@@ -149,21 +166,7 @@ class OrderController {
       const allRefunds = await RefundProxyService.list();
       const rawList = Array.isArray(allRefunds) ? allRefunds : (allRefunds?.data || []);
       if (req.user && req.user.role === 'PRINTER') {
-        const pId = req.user._id.toString();
-        const myOrders = await PrintOrder.find({
-          $or: [
-            { printer_id: pId },
-            ...(req.user.email === 'printer@vietcraft.print' || !req.user.printer_id ? [{ printer_id: { $exists: false } }, { printer_id: null }] : [])
-          ]
-        }).select('order_code').lean();
-        const myCodes = new Set(myOrders.map(o => o.order_code));
-        const filtered = rawList.filter(r => {
-          const code = r.order_code || r.order_id?.order_code || '';
-          if (myCodes.has(code)) return true;
-          if (myCodes.size === 0) return true;
-          return false;
-        });
-        return res.json(filtered);
+        return res.json(await filterRefundsForUser(req.user, rawList));
       }
       res.json(rawList);
     } catch (err) {
@@ -205,6 +208,16 @@ class OrderController {
       }
       if (decision === 'REJECT' && (!Array.isArray(evidence) || evidence.length === 0)) {
         return res.status(400).json({ error: 'Khi từ chối yêu cầu, xưởng in bắt buộc phải cung cấp ít nhất 1 hình ảnh hoặc video minh chứng đối chiếu.' });
+      }
+      if (req.user?.role === 'PRINTER') {
+        const allRefunds = await RefundProxyService.list();
+        const rawList = Array.isArray(allRefunds) ? allRefunds : (allRefunds?.data || []);
+        const mine = await filterRefundsForUser(req.user, rawList);
+        const requestId = String(req.params.requestId);
+        const owned = mine.some(item => String(item._id) === requestId || String(item.id) === requestId);
+        if (!owned) {
+          return res.status(403).json({ error: 'Bạn không có quyền xử lý yêu cầu đổi trả của xưởng khác.' });
+        }
       }
       res.json(await RefundProxyService.respond(req.params.requestId, decision, note.trim(), evidence || []));
     } catch (err) { res.status(502).json({ error: err.message }); }
