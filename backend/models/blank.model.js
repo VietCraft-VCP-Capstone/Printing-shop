@@ -20,7 +20,20 @@ const PrintAreaSchema = new mongoose.Schema({
   template_w: { type: Number },
   template_h: { type: Number },
   arc: { type: Number },                        // radian cung nhìn thấy khi cuộn
+  // Vùng phôi để VietCraft đổi màu đúng chỗ: PNG xám (trắng = phôi) hoặc PNG nền trong suốt.
+  mask_image: { type: String },
+  // auto = AI tạo, xưởng chưa xem; confirmed = xưởng đã xác nhận; custom = xưởng tự tải lên
+  mask_status: { type: String, enum: ['auto', 'confirmed', 'custom'] },
 }, { _id: false });
+
+// Ảnh thật xưởng chụp cho từng màu ở từng mặt in: VietCraft dùng ảnh này thay vì tự đổi màu.
+const ColorImageSchema = new mongoose.Schema({
+  color: { type: String, required: true },
+  area_key: { type: String, required: true },
+  image: { type: String, required: true },
+}, { _id: false });
+
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 const BlankSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -35,7 +48,12 @@ const BlankSchema = new mongoose.Schema({
   variations: [{
     sku: { type: String, required: true },
     color: { type: String },
-    color_hex: { type: String, default: '#FFFFFF' }, // Mã màu HEX để render swatch
+    // Mã màu HEX: dùng để đổi màu mockup nên bắt buộc khi có tên màu (không để mặc định trắng)
+    color_hex: {
+      type: String,
+      required: [function () { return Boolean(this.color && String(this.color).trim()); }, 'Màu cần có mã HEX (dạng #RRGGBB) để mockup hiển thị đúng màu.'],
+      match: [HEX_RE, 'Mã màu "{VALUE}" không hợp lệ, cần dạng #RRGGBB.'],
+    },
     size: { type: String },
     material: { type: String },
     weight_gram: { type: Number, default: 200 },    // Khối lượng tính phí vận chuyển
@@ -43,6 +61,7 @@ const BlankSchema = new mongoose.Schema({
     in_stock: { type: Boolean, default: true }      // Trạng thái còn hàng / hết hàng
   }],
   print_areas: { type: [PrintAreaSchema], default: [] },
+  color_images: { type: [ColorImageSchema], default: [] },
   printer_id: { type: String, index: true },
   printer_name: { type: String },
   is_active: { type: Boolean, default: true }
