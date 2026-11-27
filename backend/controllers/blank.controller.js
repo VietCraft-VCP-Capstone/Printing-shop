@@ -4,6 +4,7 @@ const Partnership = require('../models/partnership.model');
 const User = require('../models/user.model');
 const fs = require('fs');
 const { isCloudinaryEnabled, uploadToCloudinary } = require('../services/cloudinary.service');
+const { generateMask, MaskError } = require('../services/blank-mask.service');
 
 class BlankController {
   static async getAllBlanks(req, res) {
@@ -131,6 +132,17 @@ class BlankController {
       });
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  }
+
+  /** Tạo mask vùng phôi tự động (AI) cho một ảnh để xưởng xem lại trước khi lưu. */
+  static async previewMask(req, res) {
+    try {
+      const result = await generateMask(req.body?.image);
+      res.json(result);
+    } catch (err) {
+      const status = err instanceof MaskError ? err.status : 500;
+      res.status(status).json({ error: err.message || 'Không tạo được vùng phôi.' });
     }
   }
 

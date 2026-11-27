@@ -13,6 +13,9 @@ router.get('/:id', BlankController.getBlankById);
 // Upload ảnh phôi từ máy tính
 router.post('/upload', optionalAuthenticate, upload.single('image'), BlankController.uploadImage);
 
+// Tách nền tự động để xưởng xác nhận vùng phôi (đặt trước '/:id')
+router.post('/mask-preview', authenticate, requireRole(['PRINTER', 'ADMIN']), BlankController.previewMask);
+
 // Writes — PRINTER và ADMIN xưởng in.
 router.post('/', authenticate, requireRole(['PRINTER', 'ADMIN']), BlankController.createBlank);
 router.put('/:id', authenticate, requireRole(['PRINTER', 'ADMIN']), BlankController.updateBlank);

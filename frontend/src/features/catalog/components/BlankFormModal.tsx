@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import {
   X, Plus, Trash2, Layers, Sliders, Sparkles, Clock, Palette,
-  Eye
+  Eye, Camera
 } from 'lucide-react';
 import api from '../../../services/api';
 import ImageUploadZone from './ImageUploadZone';
+import { AreaMaskPanel, ColorPhotosTab, type ColorImage, type MaskStatus } from './MaskAndColorPhotos';
+
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 interface Variation {
   sku: string;
@@ -31,6 +34,8 @@ interface PrintArea {
   template_w?: number;
   template_h?: number;
   arc?: number;
+  mask_image?: string;
+  mask_status?: MaskStatus;
 }
 
 interface Props {
@@ -84,7 +89,7 @@ const PRESET_COLORS = [
 ];
 
 export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
-  const [activeTab, setActiveTab] = useState<'info' | 'areas' | 'variants'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'areas' | 'variants' | 'photos'>('info');
 
   // Tab 1: General Info
   const [title, setTitle] = useState(blank?.title || '');
@@ -104,6 +109,9 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
   );
   const [selectedAreaIdx, setSelectedAreaIdx] = useState(0);
 
+  // Tab 4: Ảnh thật theo màu
+  const [colorImages, setColorImages] = useState<ColorImage[]>(blank?.color_images || []);
+
   // Tab 3: Variations
   const [variations, setVariations] = useState<Variation[]>(
     blank?.variations?.length ? blank.variations : [emptyVar('Trắng', '#FFFFFF', 'M', 85000), emptyVar('Đen', '#111827', 'L', 85000)]
@@ -115,7 +123,16 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
 
   // Variation handlers
   const setVar = (i: number, f: keyof Variation, v: any) =>
-    setVariations(prev => prev.map((x, idx) => idx === i ? { ...x, [f]: v } : x));
+    setVariations(prev => prev.map((x, idx) => {
+      if (idx !== i) return x;
+      const next = { ...x, [f]: v };
+      // Gõ tên màu quen thuộc thì tự điền mã màu (nếu đang trống hoặc còn là trắng mặc định)
+      if (f === 'color' && typeof v === 'string') {
+        const preset = PRESET_COLORS.find(c => c.name.toLowerCase().split(' / ').some(n => n === v.trim().toLowerCase()));
+        if (preset && (!x.color_hex || x.color_hex.toUpperCase() === '#FFFFFF')) next.color_hex = preset.hex;
+      }
+      return next;
+    }));
 
   const addPresetSizes = (colorName: string, colorHex: string, baseCost = 85000) => {
     const sizes = ['S', 'M', 'L', 'XL', '2XL'];
@@ -142,7 +159,27 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
 
   // Print area handlers
   const setArea = (i: number, f: keyof PrintArea, v: any) =>
-    setPrintAreas(prev => prev.map((x, idx) => idx === i ? { ...x, [f]: v } : x));
+    setPrintAreas(prev => prev.map((x, idx) => {
+      if (idx !== i) return x;
+      // Mask gắn với ảnh: đổi ảnh mặt in thì mask cũ không còn khớp
+      if (f === 'image' && v !== x.image) return { ...x, image: v, mask_image: undefined, mask_status: undefined };
+      return { ...x, [f]: v };
+    }));
+
+  const changeDefaultImage = (url: string) => {
+    if (url !== defaultImage) {
+      setPrintAreas(prev => prev.map(a => a.image ? a : { ...a, mask_image: undefined, mask_status: undefined }));
+    }
+    setDefaultImage(url);
+  };
+
+  const distinctColors = Array.from(
+    variations.reduce((m, v) => {
+      const name = (v.color || '').trim();
+      if (name && !m.has(name)) m.set(name, v.color_hex);
+      return m;
+    }, new Map<string, string | undefined>())
+  ).map(([name, hex]) => ({ name, hex }));
 
   const addPrintArea = () => {
     const nextKey = printAreas.some(a => a.key === 'back') ? `sleeve_${Date.now().toString().slice(-3)}` : 'back';
@@ -178,6 +215,21 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
       setActiveTab('variants');
       return;
     }
+    const badHex = variations.find(v => v.color?.trim() && !HEX_RE.test(v.color_hex || ''));
+    if (badHex) {
+      setError(`Màu "${badHex.color}" cần mã màu HEX hợp lệ (dạng #RRGGBB) để mockup hiển thị đúng màu.`);
+      setActiveTab('variants');
+      return;
+    }
+    // Màu trắng/kem cùng mã với màu khác thường là quên chọn màu
+    const hexByColor = new Map<string, string>();
+    for (const v of variations) if (v.color?.trim()) hexByColor.set(v.color.trim(), (v.color_hex || '').toUpperCase());
+    const hexes = [...hexByColor.values()];
+    if (hexes.length > 1 && new Set(hexes).size === 1) {
+      setError('Các màu khác nhau đang dùng chung một mã màu. Hãy chọn đúng mã màu cho từng màu.');
+      setActiveTab('variants');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -194,7 +246,9 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
       care_instructions: careInstructions,
       is_active: isActive,
       variations,
-      print_areas: printAreas
+      print_areas: printAreas,
+      color_images: colorImages.filter(ci =>
+        distinctColors.some(c => c.name === ci.color) && printAreas.some(a => a.key === ci.area_key)),
     };
 
     try {
@@ -280,6 +334,18 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
           >
             <Palette className="w-4 h-4" />
             3. Biến thể Màu / Size & Giá ({variations.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('photos')}
+            className={`py-3 px-3.5 text-xs font-semibold border-b-2 flex items-center gap-2 transition-all ${
+              activeTab === 'photos'
+                ? 'border-violet-600 text-violet-700'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            4. Ảnh theo màu
           </button>
         </div>
 
@@ -375,7 +441,7 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
               <div className="bg-slate-50/80 p-4 rounded-xl border border-slate-200">
                 <ImageUploadZone
                   value={defaultImage}
-                  onChange={url => setDefaultImage(url)}
+                  onChange={changeDefaultImage}
                   label="Ảnh phôi đại diện chính (Default Mockup) *"
                   aspectRatioHint="Khuyên dùng: Ảnh áo/phôi trơn nền trắng hoặc trong suốt PNG, tỷ lệ 1:1, tối thiểu 1000px"
                 />
@@ -612,6 +678,13 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
                         previewHeightClass="h-28"
                       />
                     </div>
+
+                    <AreaMaskPanel
+                      imageUrl={currentArea.image || defaultImage}
+                      maskImage={currentArea.mask_image}
+                      maskStatus={currentArea.mask_status}
+                      onChange={patch => setPrintAreas(prev => prev.map((x, idx) => idx === selectedAreaIdx ? { ...x, ...patch } : x))}
+                    />
                   </div>
 
                   {/* Right: Live Bounding Box Visualizer */}
@@ -649,6 +722,17 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* TAB 4: Ảnh thật theo màu */}
+          {activeTab === 'photos' && (
+            <ColorPhotosTab
+              colors={distinctColors}
+              areas={printAreas}
+              defaultImage={defaultImage}
+              value={colorImages}
+              onChange={setColorImages}
+            />
           )}
 
           {/* TAB 3: Variations Matrix & Pricing */}
@@ -825,6 +909,7 @@ export default function BlankFormModal({ blank, onClose, onSaved }: Props) {
             {activeTab === 'info' && 'Bước 1: Điền thông tin phôi & Tải ảnh mockup.'}
             {activeTab === 'areas' && `Bước 2: Căn chỉnh ${printAreas.length} vùng in cho bộ thiết kế.`}
             {activeTab === 'variants' && `Bước 3: Hoàn thiện ${variations.length} biến thể SKU & Giá phôi.`}
+            {activeTab === 'photos' && 'Bước 4 (không bắt buộc): Ảnh chụp thật cho từng màu.'}
           </div>
           <div className="flex items-center gap-2">
             <button
