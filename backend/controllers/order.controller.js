@@ -15,7 +15,6 @@ async function filterRefundsForUser(user, rawList) {
   return rawList.filter(r => {
     const code = r.order_code || r.order_id?.order_code || '';
     if (myCodes.has(code)) return true;
-    if (myCodes.size === 0) return true;
     return false;
   });
 }
